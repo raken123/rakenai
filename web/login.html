@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · Raken</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="auth">
+    <a class="logo" href="/"><span>Raken</span></a>
+    <h1 id="heading">Log in</h1>
+    <form id="form">
+      <input id="email" type="email" placeholder="Email" autocomplete="email" required>
+      <input id="password" type="password" placeholder="Password (8+ characters)" autocomplete="current-password" minlength="8" required>
+      <p class="error" id="error"></p>
+      <button type="submit" id="submit">Log in</button>
+    </form>
+    <p class="switch" id="switch"></p>
+  </main>
+
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+    let mode = new URLSearchParams(location.search).get('mode') === 'signup' ? 'signup' : 'login';
+
+    function render() {
+      const signup = mode === 'signup';
+      $('heading').textContent = signup ? 'Create your Raken account' : 'Log in to Raken';
+      $('submit').textContent = signup ? 'Create account' : 'Log in';
+      $('password').autocomplete = signup ? 'new-password' : 'current-password';
+      $('switch').innerHTML = signup
+        ? 'Already have an account? <a href="#" id="toggle">Log in</a>'
+        : 'New to Raken? <a href="#" id="toggle">Create an account</a>';
+      $('toggle').onclick = (e) => {
+        e.preventDefault();
+        mode = signup ? 'login' : 'signup';
+        $('error').textContent = '';
+        render();
+      };
+    }
+
+    $('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('submit').disabled = true;
+      $('error').textContent = '';
+      try {
+        const res = await fetch(`/api/${mode}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: $('email').value, password: $('password').value }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        location.href = 'app.html';
+      } catch (err) {
+        $('error').textContent = err.message;
+      } finally {
+        $('submit').disabled = false;
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

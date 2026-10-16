@@ -33,11 +33,22 @@ export function utcMonth(date) {
 
 export function newAccount(plan = 'free') {
   if (!PLANS[plan]) throw new Error(`Unknown plan: ${plan}`);
-  return { plan, credits: 0, ultraCredits: 0, lastDailyGrant: null, lastMonthlyGrant: null };
+  return { plan, credits: 0, ultraCredits: 0, lastDailyGrant: null, lastMonthlyGrant: null, billedBySubscription: false };
+}
+
+// Refills the monthly allowance. Called when a subscription invoice is paid.
+export function grantMonthly(account, now = new Date()) {
+  const plan = PLANS[account.plan];
+  account.credits = plan.monthlyCredits;
+  account.ultraCredits = plan.monthlyUltraCredits;
+  account.lastMonthlyGrant = utcMonth(now);
+  return account;
 }
 
 // Applies any daily or monthly allowance the account is owed as of `now`.
 // Allowances refill to the plan amount; unused credits do not roll over.
+// Accounts paid through a subscription refill when each invoice is paid
+// instead of on the calendar month.
 export function refreshAllowance(account, now = new Date()) {
   const plan = PLANS[account.plan];
   const day = utcDay(now);
@@ -47,18 +58,24 @@ export function refreshAllowance(account, now = new Date()) {
     account.credits = plan.dailyCredits;
     account.lastDailyGrant = day;
   }
-  if ((plan.monthlyCredits > 0 || plan.monthlyUltraCredits > 0) && account.lastMonthlyGrant !== month) {
-    account.credits = plan.monthlyCredits;
-    account.ultraCredits = plan.monthlyUltraCredits;
-    account.lastMonthlyGrant = month;
+  const monthly = plan.monthlyCredits > 0 || plan.monthlyUltraCredits > 0;
+  if (monthly && !account.billedBySubscription && account.lastMonthlyGrant !== month) {
+    grantMonthly(account, now);
   }
   return account;
 }
 
-export function changePlan(account, plan, now = new Date()) {
+export function changePlan(account, plan, { now = new Date(), billedBySubscription = false } = {}) {
   if (!PLANS[plan]) throw new Error(`Unknown plan: ${plan}`);
-  Object.assign(account, newAccount(plan));
+  if (account.plan === plan && account.billedBySubscription === billedBySubscription) return account;
+  Object.assign(account, newAccount(plan), { billedBySubscription });
+  if (billedBySubscription) grantMonthly(account, now);
   return refreshAllowance(account, now);
+}
+
+export function refund(account, charged) {
+  account.credits += charged.credits;
+  account.ultraCredits += charged.ultraCredits;
 }
 
 export class RakenError extends Error {

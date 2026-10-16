@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raken</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <a class="logo" href="/"><span>Raken</span></a>
+      <button id="new-chat" class="ghost">+ New chat</button>
+      <h2>Tools</h2>
+      <div id="tools"></div>
+      <h2>Model</h2>
+      <div id="models"></div>
+      <h2>History</h2>
+      <div class="history" id="history"></div>
+      <div class="account-box">
+        <div class="balance"><span id="plan-name">—</span><button class="ghost" id="open-plans">Plans</button></div>
+        <div class="balance"><span>Credits</span><strong id="credits">0</strong></div>
+        <div class="balance ultra"><span>Ultra Credits</span><strong id="ultra">0</strong></div>
+        <div class="balance muted"><span id="email"></span><a href="#" id="logout">Log out</a></div>
+      </div>
+    </aside>
+
+    <section class="main">
+      <div class="topbar">
+        <button class="ghost menu-toggle" id="menu">☰</button>
+        <strong id="title">New chat</strong>
+        <span class="muted" id="model-label"></span>
+      </div>
+      <div id="messages" class="messages"></div>
+      <form id="composer" class="composer">
+        <textarea id="prompt" rows="2" placeholder="Message Raken…" required></textarea>
+        <div class="composer-row">
+          <label class="ultra-toggle"><input type="checkbox" id="use-ultra"> Use Ultra Credits (much faster)</label>
+          <span id="quote" class="quote"></span>
+          <button type="submit" id="send">Send</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <dialog id="plans-dialog">
+    <h2>Plans</h2>
+    <p class="muted" id="billing-note"></p>
+    <div class="grid" id="plans"></div>
+    <p class="error" id="plans-error"></p>
+    <form method="dialog" style="display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" class="ghost" id="manage-billing" hidden>Manage billing</button>
+      <button class="ghost">Close</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

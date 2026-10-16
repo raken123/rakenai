@@ -44,7 +44,7 @@ export const MODELS = {
   'raken-mesh-1': {
     name: 'Raken Mesh 1',
     kind: 'mesh',
-    description: 'Generates 3D models in 8K quality.',
+    description: 'Generates 3D models you can download.',
     creditMultiplier: 25,
   },
 };
@@ -93,6 +93,3 @@ export const PLANS = {
     tools: Object.keys(TOOLS),
   },
 };
-
-// Every model is trained in the cloud for somewhere in this range of epochs.
-export const TRAINING_EPOCHS = { min: 150, max: 2400 };

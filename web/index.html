@@ -3,50 +3,89 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Raken</title>
+  <title>Raken: chat, create, build</title>
+  <meta name="description" content="Raken is an AI you can chat with, that builds files with agents, and creates images, short movies and 3D models.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <span class="logo">Raken</span>
-    <div class="balance">
-      <span id="plan-name">—</span>
-      <span><strong id="credits">0</strong> credits</span>
-      <span><strong id="ultra">0</strong> Ultra</span>
-      <button id="open-plans" class="ghost">Plans</button>
-    </div>
+  <header class="site-nav">
+    <a class="logo" href="/"><span>Raken</span></a>
+    <nav>
+      <a href="#models">Models</a>
+      <a href="#plans">Plans</a>
+      <a class="button ghost" id="nav-login" href="login.html">Log in</a>
+      <a class="button" id="nav-open" href="login.html?mode=signup">Get started</a>
+    </nav>
   </header>
 
-  <main class="layout">
-    <aside class="sidebar">
-      <h2>Tools</h2>
-      <nav id="tools"></nav>
-      <h2>Model</h2>
-      <div id="models"></div>
-    </aside>
+  <section class="hero">
+    <h1>Chat, create and build with <span class="brand">Raken</span></h1>
+    <p>Talk to Raken like any AI. Send agents to make your files. Turn ideas into images, short movies and 3D models.</p>
+    <div class="actions">
+      <a class="button" href="login.html?mode=signup">Start free</a>
+      <a class="button ghost" href="https://github.com/raken123/rakenai/releases/latest">Download for Mac</a>
+    </div>
+  </section>
 
-    <section class="chat">
-      <div id="messages" class="messages">
-        <p class="empty">Ask Raken anything.</p>
-      </div>
-      <form id="composer" class="composer">
-        <textarea id="prompt" rows="2" placeholder="Message Raken…" required></textarea>
-        <div class="composer-row">
-          <label class="ultra-toggle"><input type="checkbox" id="use-ultra"> Use Ultra Credits (much faster)</label>
-          <span id="quote" class="quote"></span>
-          <button type="submit">Send</button>
-        </div>
-      </form>
-    </section>
-  </main>
+  <section class="section" id="models">
+    <h2>Models</h2>
+    <p>Pick the right model for the job, from instant answers to deep agent work.</p>
+    <div class="grid" id="model-cards"></div>
+  </section>
 
-  <dialog id="plans-dialog">
+  <section class="section" id="tools">
+    <h2>Tools</h2>
+    <p>Three ways to work with Raken.</p>
+    <div class="grid" id="tool-cards"></div>
+  </section>
+
+  <section class="section" id="credits">
+    <h2>Credits and Ultra Credits</h2>
+    <div class="grid">
+      <div class="card"><span class="tag">Credits</span><h3>Pay for what you ask</h3><p>Each prompt costs credits based on its length and the model you pick.</p></div>
+      <div class="card"><span class="tag ultra">Ultra Credits</span><h3>Heavy jobs, much faster</h3><p>Ultra Credits send big jobs to the priority cluster, so work that takes hours finishes in minutes.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="plans">
     <h2>Plans</h2>
-    <div id="plans" class="plans"></div>
-    <p class="note">Credits are charged by prompt size and model. Ultra Credits run heavy jobs on the priority cluster, so they finish far faster.</p>
-    <form method="dialog"><button class="ghost">Close</button></form>
-  </dialog>
+    <p>Start free. Upgrade when you need more.</p>
+    <div class="grid" id="plan-cards"></div>
+  </section>
 
-  <script type="module" src="app.js"></script>
+  <footer>© <span id="year"></span> Raken</footer>
+
+  <script type="module">
+    import { planCard } from './plans.js';
+    const res = await fetch('/api/catalog');
+    const catalog = await res.json();
+    const card = (tag, name, text) => {
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = '<span class="tag"></span><h3></h3><p></p>';
+      el.querySelector('.tag').textContent = tag;
+      el.querySelector('h3').textContent = name;
+      el.querySelector('p').textContent = text;
+      return el;
+    };
+    document.getElementById('model-cards').append(
+      ...Object.values(catalog.models).map((m) => card(m.kind === 'text' ? 'Chat model' : m.kind, m.name, m.description)),
+    );
+    document.getElementById('tool-cards').append(
+      ...Object.values(catalog.tools).map((t) => card('Tool', t.name, t.description)),
+    );
+    document.getElementById('plan-cards').append(
+      ...Object.entries(catalog.plans).map(([id, plan]) =>
+        planCard(catalog, id, plan, { action: { label: id === 'free' ? 'Start free' : `Get ${plan.name}`, href: 'login.html?mode=signup' } }),
+      ),
+    );
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const me = await fetch('/api/me');
+    if (me.ok) {
+      document.getElementById('nav-login').remove();
+      Object.assign(document.getElementById('nav-open'), { textContent: 'Open Raken', href: 'app.html' });
+    }
+  </script>
 </body>
 </html>

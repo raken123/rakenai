@@ -1,0 +1,52 @@
+{
+  "name": "raken-desktop",
+  "productName": "Raken",
+  "version": "1.0.0",
+  "description": "Raken for Mac",
+  "author": "Raken",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "bundle": "node scripts/bundle.mjs",
+    "start": "npm run bundle && electron .",
+    "dist": "npm run bundle && electron-builder --mac dmg --x64 --arm64 --publish never"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "stripe": "^23.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.16.1"
+  },
+  "build": {
+    "appId": "ai.raken.desktop",
+    "productName": "Raken",
+    "copyright": "© Raken",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.mjs",
+      "config.json",
+      "app/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Raken ${version}",
+      "artifactName": "Raken-${version}-${arch}.dmg"
+    }
+  }
+}
