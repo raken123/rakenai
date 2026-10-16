@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raken</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <span class="logo">Raken</span>
+    <div class="balance">
+      <span id="plan-name">—</span>
+      <span><strong id="credits">0</strong> credits</span>
+      <span><strong id="ultra">0</strong> Ultra</span>
+      <button id="open-plans" class="ghost">Plans</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Tools</h2>
+      <nav id="tools"></nav>
+      <h2>Model</h2>
+      <div id="models"></div>
+    </aside>
+
+    <section class="chat">
+      <div id="messages" class="messages">
+        <p class="empty">Ask Raken anything.</p>
+      </div>
+      <form id="composer" class="composer">
+        <textarea id="prompt" rows="2" placeholder="Message Raken…" required></textarea>
+        <div class="composer-row">
+          <label class="ultra-toggle"><input type="checkbox" id="use-ultra"> Use Ultra Credits (much faster)</label>
+          <span id="quote" class="quote"></span>
+          <button type="submit">Send</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <dialog id="plans-dialog">
+    <h2>Plans</h2>
+    <div id="plans" class="plans"></div>
+    <p class="note">Credits are charged by prompt size and model. Ultra Credits run heavy jobs on the priority cluster, so they finish far faster.</p>
+    <form method="dialog"><button class="ghost">Close</button></form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

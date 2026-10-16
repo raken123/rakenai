@@ -1,0 +1,12 @@
+{
+  "name": "rakenai",
+  "version": "0.1.0",
+  "description": "Raken: chat, agents and media generation with a credit-based plan system.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}
