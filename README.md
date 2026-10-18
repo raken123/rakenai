@@ -94,3 +94,22 @@ desktop/               Electron app and DMG packaging
 scripts/set-plan.js    owner tool to set an account's plan
 test/                  node:test suites (the Claude API is stubbed locally)
 ```
+
+## Raken TV
+
+`tv/index.html` is a TV operating system in one HTML file. Open it in any browser (no server needed). It is built for a remote: arrow keys move, Enter is OK, Esc or Backspace goes back, and H goes home. A mouse or touch works too.
+
+| App | Type | Notes |
+|---|---|---|
+| Clock | Built in | Clock with week number, timer, alarms (they ring over any app, with snooze), world clock |
+| Panda Kids | Built in | 4 cartoon movies with narration, 5 games (memory, bop the mole, tic-tac-toe, counting, copy the colors), drawing pad, animal sounds, ABC, piano |
+| Settings | Built in | Parental controls, region, 12/24-hour clock, how browser apps open |
+| YouTube, Netflix | Browser | Open the real site in a full-screen TV window |
+| TikTok, Instagram | Browser + parental controls | PIN, block, or a daily time limit (default 1 hour) |
+| SVT Play, SVT Barn | Browser + parental controls | Only available in Sweden |
+
+Browser apps open the real website in a pop-up window that first shows the app's splash screen. These sites don't allow being embedded in another page. If the browser blocks pop-ups, the app offers a button that opens the site in a new tab. You can also choose new tabs in Settings → Browser apps.
+
+Parental controls ask a grown-up to create a 4-digit PIN the first time. Screen time is counted while the app's window is open. When the daily limit is reached, the window closes and the app stays locked until midnight.
+
+The region is detected from the time zone (Europe/Stockholm) or a Swedish browser language, and can be set in Settings → Region. Settings, alarms and stars are saved in the browser's local storage.

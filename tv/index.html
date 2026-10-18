@@ -1,0 +1,1763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raken TV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Lexend:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: a fixed 1920×1080 "TV panel" scaled to fit any window, driven by a D-pad (arrow keys + OK + Back). */
+:root {
+  color-scheme: dark;
+  --ink: #0a1020;
+  --panel: #131b31;
+  --panel-2: #1b2544;
+  --line: #2b3760;
+  --fg: #eef2fb;
+  --muted: #97a3c6;
+  --focus: #ffcf5c;
+  --good: #57d9a3;
+  --bad: #ff6b7d;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --ui: "Lexend", "Segoe UI", system-ui, sans-serif;
+  --kid: "Baloo 2", "Comic Sans MS", "Chalkboard SE", system-ui, sans-serif;
+  --k-ink: #20304f;
+  --k-bg: #cdeeff;
+  --k-card: #ffffff;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: #000; color: var(--fg); font-family: var(--ui); }
+button { font: inherit; color: inherit; }
+#viewport { position: fixed; inset: 0; overflow: hidden; background: #000; }
+#stage {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  transform: translate(-50%, -50%) scale(var(--s, 0.5)); transform-origin: center;
+  background: var(--ink); overflow: hidden; font-size: 28px; line-height: 1.35;
+}
+.f { cursor: pointer; outline: none; }
+.f:focus { outline: 6px solid var(--focus); outline-offset: 6px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 14px;
+  min-height: 76px; padding: 0 38px; border-radius: 999px; border: 0;
+  background: var(--panel-2); color: var(--fg); font-size: 28px; font-weight: 500; text-decoration: none;
+  transition: transform .15s, background .15s;
+}
+.btn:focus { background: var(--fg); color: var(--ink); outline-offset: 4px; transform: scale(1.04); }
+.btn.primary { background: var(--focus); color: #241a00; }
+.btn.primary:focus { background: #fff2c8; }
+.btn.small { min-height: 60px; padding: 0 28px; font-size: 24px; }
+.eyebrow { margin: 0; font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Screens */
+#screen { position: absolute; inset: 0 0 64px; }
+.hints {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; gap: 44px; align-items: center;
+  padding: 0 80px; font-size: 21px; color: var(--muted); border-top: 1px solid var(--line); background: var(--ink);
+}
+.hints kbd { display: inline-block; min-width: 40px; padding: 2px 10px; margin-right: 8px; border-radius: 8px; border: 1px solid var(--line); font-family: var(--ui); color: var(--fg); text-align: center; }
+.hints .grow { flex: 1; }
+
+/* Home */
+.topbar { display: flex; align-items: center; justify-content: space-between; height: 110px; padding: 0 80px; }
+.logo { display: flex; align-items: center; gap: 18px; font-family: var(--display); font-weight: 800; font-size: 38px; letter-spacing: -.01em; }
+.logo-mark { width: 54px; height: 54px; border-radius: 16px; background: conic-gradient(from 200deg, #ffcf5c, #ff7a59, #7a6cff, #4cc9f0, #ffcf5c); display: grid; place-items: center; }
+.logo-mark::after { content: ""; width: 22px; height: 22px; border-radius: 6px; background: var(--ink); }
+.tb-right { display: flex; align-items: center; gap: 28px; font-size: 26px; color: var(--muted); }
+.tb-time { font-family: var(--display); font-size: 44px; font-weight: 700; color: var(--fg); }
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 20px; border-radius: 999px; background: var(--panel-2); font-size: 22px; color: var(--fg); }
+.chip.warn { background: #3a2a14; color: #ffd796; }
+.chip.lock { background: #2c2147; color: #d9cbff; }
+.chip.ok { background: #143829; color: #a8f0cf; }
+.hero { position: relative; height: 330px; margin: 0 80px; border-radius: 36px; overflow: hidden; background: var(--panel); display: flex; align-items: center; gap: 60px; padding: 0 70px; }
+.hero-glow { position: absolute; inset: 0; background: radial-gradient(900px 500px at 85% 40%, var(--c, #334) 0%, transparent 70%); opacity: .75; transition: background .4s; }
+.hero-icon { position: relative; width: 210px; height: 210px; border-radius: 56px; overflow: hidden; flex: none; box-shadow: 0 30px 60px rgba(0,0,0,.4); }
+.hero-icon svg { width: 100%; height: 100%; display: block; }
+.hero-text { position: relative; max-width: 1100px; display: grid; gap: 18px; }
+.hero-text h1 { font-size: 88px; line-height: 1; letter-spacing: -.02em; }
+.hero-text p { margin: 0; font-size: 30px; color: #d2d9ee; max-width: 960px; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.rows { padding: 24px 80px 0; display: grid; gap: 8px; }
+.rows h3 + .row + h3 { margin-top: 14px; }
+.rows h3 { font-family: var(--ui); font-weight: 500; font-size: 26px; color: var(--muted); }
+.row { display: flex; gap: 34px; padding: 12px 0 8px; }
+.tile {
+  position: relative; width: 236px; height: 150px; border-radius: 28px; border: 0; padding: 0; flex: none;
+  background: var(--bg, var(--panel-2)); transition: transform .18s; display: block;
+}
+.tile .t-art { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; }
+.tile svg { width: 100%; height: 100%; display: block; }
+.tile:focus { transform: scale(1.1); outline-offset: 5px; z-index: 2; }
+.tile .t-name { position: absolute; left: 0; right: 0; bottom: -40px; font-size: 22px; color: var(--muted); text-align: center; }
+.tile:focus .t-name { color: var(--fg); }
+.row .tile-wrap { position: relative; padding-bottom: 40px; }
+.tile.dim { filter: grayscale(.85) brightness(.55); }
+.tile.dim:focus { filter: grayscale(.6) brightness(.8); }
+.badge { position: absolute; top: 12px; right: 12px; min-width: 40px; height: 40px; padding: 0 10px; border-radius: 20px; display: grid; place-items: center; font-size: 20px; background: rgba(10,16,32,.85); color: #fff; }
+.badge.live { background: var(--good); color: #062417; font-weight: 600; }
+
+/* App chrome */
+.app-head { display: flex; align-items: center; gap: 30px; height: 130px; padding: 0 80px; }
+.app-head h1 { font-size: 56px; flex: 1; }
+.app-head .tb-time { font-size: 40px; }
+.back-btn { min-height: 64px; padding: 0 30px; font-size: 24px; }
+
+/* Clock app */
+.clock-app { display: grid; grid-template-columns: 360px 1fr; gap: 50px; padding: 0 80px; height: calc(100% - 130px); }
+.tabs { display: grid; align-content: start; gap: 16px; padding-top: 10px; }
+.tab { display: flex; align-items: center; gap: 20px; height: 96px; padding: 0 30px; border-radius: 26px; border: 0; background: transparent; font-size: 30px; text-align: left; color: var(--muted); }
+.tab svg { width: 40px; height: 40px; flex: none; }
+.tab.on { background: var(--panel-2); color: var(--fg); }
+.tab:focus { background: var(--fg); color: var(--ink); outline-offset: 4px; }
+.panel { position: relative; background: var(--panel); border-radius: 36px; padding: 50px 60px; overflow: hidden; height: calc(100% - 30px); }
+.panel h2 { font-size: 44px; }
+.p-head { display: flex; align-items: center; justify-content: space-between; gap: 30px; margin-bottom: 30px; }
+.p-head p { margin: 6px 0 0; color: var(--muted); }
+.clock-face { display: flex; align-items: center; gap: 70px; height: 100%; padding-left: 30px; }
+.analog { width: 480px; height: 480px; flex: none; }
+.digital { display: grid; gap: 10px; }
+.digital .big { font-family: var(--display); font-size: 130px; line-height: .95; font-weight: 700; letter-spacing: -.03em; }
+.digital .date { font-size: 40px; color: #d2d9ee; }
+.digital .week { font-size: 28px; color: var(--muted); }
+.timer-wrap { display: grid; grid-template-columns: 520px 1fr; gap: 70px; align-items: center; height: calc(100% - 20px); }
+.timer-ring { position: relative; width: 520px; height: 520px; }
+.timer-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.timer-ring .read { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.timer-ring .read b { font-family: var(--display); font-size: 110px; font-weight: 700; letter-spacing: -.02em; display: block; }
+.timer-ring .read span { color: var(--muted); font-size: 26px; }
+.timer-ctrl { display: grid; gap: 34px; }
+.timer-ctrl .group { display: flex; flex-wrap: wrap; gap: 18px; }
+.timer-ctrl h3 { font-family: var(--ui); font-size: 24px; font-weight: 500; color: var(--muted); margin-bottom: -16px; }
+.alarm-list { display: grid; gap: 18px; max-height: 640px; overflow: auto; scrollbar-width: none; padding: 10px; margin: -10px; }
+.alarm-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 22px; padding: 22px 30px; border-radius: 28px; background: var(--panel-2); }
+.alarm-row .when { font-family: var(--display); font-size: 70px; font-weight: 700; line-height: 1; }
+.alarm-row .meta { color: var(--muted); font-size: 24px; margin-top: 6px; }
+.alarm-row.off .when { color: var(--muted); }
+.alarm-row .btn, .s-row .btn { background: var(--line); }
+.alarm-row .btn:focus, .s-row .btn:focus { background: var(--fg); }
+.toggle { min-width: 150px; }
+.alarm-row .toggle.on { background: var(--good); color: #062417; }
+.toggle.on { background: var(--good); color: #062417; }
+.empty { padding: 60px; border: 2px dashed var(--line); border-radius: 28px; color: var(--muted); text-align: center; font-size: 30px; }
+.world { display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; max-height: 660px; overflow: auto; scrollbar-width: none; padding: 12px; margin: -12px; }
+.city { text-align: left; border: 0; border-radius: 28px; background: var(--panel-2); padding: 26px 30px; display: grid; gap: 4px; min-height: 200px; transition: transform .15s; }
+.city:focus { transform: scale(1.04); }
+.city .cn { font-size: 28px; font-weight: 500; display: flex; justify-content: space-between; }
+.city .ct { font-family: var(--display); font-size: 66px; font-weight: 700; line-height: 1.1; }
+.city .cd { font-size: 22px; color: var(--muted); }
+.city.add { place-items: center; text-align: center; border: 2px dashed var(--line); background: transparent; color: var(--muted); font-size: 30px; }
+.city.here { background: #20305a; }
+
+/* Modals */
+#modals .modal-wrap { position: absolute; inset: 0; background: rgba(4,7,16,.78); display: grid; place-items: center; z-index: 50; animation: fade .18s; }
+.modal { width: 1000px; max-height: 960px; overflow: auto; scrollbar-width: none; background: var(--panel); border: 1px solid var(--line); border-radius: 40px; padding: 56px 64px; box-shadow: 0 40px 120px rgba(0,0,0,.6); }
+.modal h2 { font-size: 50px; margin-bottom: 16px; }
+.modal p { margin: 0 0 14px; font-size: 30px; color: #d2d9ee; }
+.modal .m-sub { color: var(--muted); font-size: 26px; }
+.m-actions { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 36px; }
+.m-actions:empty { display: none; }
+.modal.shake { animation: shake .4s; }
+.modal.pin { width: 760px; text-align: center; }
+.modal.pin .m-actions { justify-content: center; }
+.pin-dots { display: flex; gap: 26px; justify-content: center; margin: 30px 0 10px; }
+.pin-dots i { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--muted); }
+.pin-dots i.on { background: var(--focus); border-color: var(--focus); }
+.pin-err { min-height: 42px; color: var(--bad) !important; }
+.pin-grid { display: grid; grid-template-columns: repeat(3, 150px); gap: 20px; justify-content: center; }
+.pin-k { height: 104px; border-radius: 30px; border: 0; background: var(--panel-2); font-size: 42px; font-weight: 500; }
+.pin-k:focus { background: var(--fg); color: var(--ink); }
+.modal.ring { text-align: center; width: 900px; }
+.modal.ring .m-actions { justify-content: center; }
+.ring-icon { font-size: 150px; animation: wobble .5s infinite; }
+.steppers { display: flex; gap: 40px; justify-content: center; align-items: center; margin: 20px 0 10px; }
+.stepper { display: grid; justify-items: center; gap: 6px; }
+.stepper .arrow { border: 0; background: none; color: var(--muted); font-size: 34px; padding: 0 30px; cursor: pointer; }
+.stepper .val { width: 220px; height: 170px; border: 0; border-radius: 30px; background: var(--panel-2); font-family: var(--display); font-size: 110px; font-weight: 700; }
+.stepper .val:focus { background: var(--fg); color: var(--ink); }
+.colon { font-family: var(--display); font-size: 100px; font-weight: 700; color: var(--muted); }
+.opt-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.pick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+.pick-grid .btn { border-radius: 22px; justify-content: flex-start; }
+
+/* Web apps */
+.web { display: grid; place-items: center; height: calc(100% - 130px); padding: 0 80px 40px; }
+.web-card { position: relative; width: 100%; height: 100%; border-radius: 40px; overflow: hidden; background: var(--panel); display: flex; align-items: center; gap: 80px; padding: 0 100px; }
+.web-card .hero-glow { opacity: .55; }
+.web-card .hero-icon { width: 300px; height: 300px; border-radius: 70px; }
+.web-body { position: relative; display: grid; gap: 22px; max-width: 1000px; }
+.web-body h1 { font-size: 100px; line-height: 1; }
+.web-body p { margin: 0; font-size: 30px; color: #d2d9ee; }
+.web-actions { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 16px; }
+.meter { height: 16px; border-radius: 8px; background: rgba(255,255,255,.12); overflow: hidden; width: 640px; }
+.meter i { display: block; height: 100%; background: var(--good); border-radius: 8px; }
+.meter.low i { background: var(--focus); }
+
+/* Settings */
+.settings { display: grid; grid-template-columns: 420px 1fr; gap: 50px; padding: 0 80px; height: calc(100% - 130px); }
+.s-panel { background: var(--panel); border-radius: 36px; padding: 50px 60px; overflow: auto; scrollbar-width: none; height: calc(100% - 30px); }
+.s-panel h2 { font-size: 46px; margin-bottom: 8px; }
+.s-panel > p { margin: 0 0 30px; color: var(--muted); }
+.s-list { display: grid; gap: 16px; }
+.s-row { display: grid; grid-template-columns: 90px 1fr auto auto; align-items: center; gap: 24px; padding: 18px 26px; border-radius: 28px; background: var(--panel-2); }
+.s-row .ico { width: 90px; height: 90px; border-radius: 22px; overflow: hidden; }
+.s-row .ico svg { width: 100%; height: 100%; display: block; }
+.s-row .nm { font-size: 30px; font-weight: 500; }
+.s-row .sub { font-size: 22px; color: var(--muted); }
+.cyc { min-width: 290px; }
+.opt { justify-content: flex-start; border-radius: 26px; width: 100%; min-height: 96px; padding: 0 34px; }
+.opt::before { content: ""; width: 30px; height: 30px; border-radius: 50%; border: 3px solid currentColor; flex: none; }
+.opt.sel::before { background: currentColor; box-shadow: inset 0 0 0 5px var(--panel-2); }
+.opt.sel:focus::before { box-shadow: inset 0 0 0 5px var(--fg); }
+.opt small { color: var(--muted); font-size: 22px; margin-left: auto; }
+.opt:focus small { color: #4a5578; }
+.s-section { display: grid; gap: 16px; margin-bottom: 40px; }
+.s-section h3 { font-family: var(--ui); font-weight: 500; font-size: 26px; color: var(--muted); }
+
+/* Toast + boot */
+#toast { position: absolute; left: 50%; bottom: 110px; transform: translate(-50%, 30px); padding: 22px 40px; border-radius: 999px; background: var(--fg); color: var(--ink); font-size: 28px; opacity: 0; transition: .25s; z-index: 80; pointer-events: none; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+#boot { position: absolute; inset: 0; z-index: 100; background: var(--ink); display: grid; place-items: center; transition: opacity .5s; }
+#boot.out { opacity: 0; pointer-events: none; }
+#boot .logo { font-size: 90px; gap: 34px; animation: rise 1s cubic-bezier(.2,.9,.3,1.2) both; }
+#boot .logo-mark { width: 130px; height: 130px; border-radius: 38px; animation: spin 1.6s ease-in-out both; }
+#boot .logo-mark::after { width: 52px; height: 52px; border-radius: 14px; }
+#boot p { position: absolute; bottom: 120px; left: 0; right: 0; text-align: center; color: var(--muted); font-size: 26px; animation: fade 1s .6s both; }
+
+/* ---------- Panda Kids ---------- */
+.kids { background: var(--k-bg); color: var(--k-ink); font-family: var(--kid); }
+.kids .btn { background: var(--k-card); color: var(--k-ink); font-weight: 700; box-shadow: 0 6px 0 rgba(32,48,79,.15); }
+.kids .btn:focus { background: var(--k-ink); color: #fff; }
+.kids .btn.primary { background: #ff8a3d; color: #fff; }
+.kids .f:focus { outline-color: #ff8a3d; }
+.k-head { display: flex; align-items: center; gap: 26px; height: 140px; padding: 0 80px; }
+.k-head .panda { width: 100px; height: 100px; }
+.k-head h1 { font-family: var(--kid); font-size: 64px; font-weight: 800; flex: 1; line-height: 1; }
+.stars { font-size: 38px; font-weight: 800; background: var(--k-card); padding: 6px 28px; border-radius: 999px; box-shadow: 0 6px 0 rgba(32,48,79,.12); }
+.k-scroll { height: calc(100% - 140px); overflow-y: auto; scrollbar-width: none; padding: 10px 80px 60px; }
+.k-scroll::-webkit-scrollbar { display: none; }
+.k-sec { margin-bottom: 26px; }
+.k-sec h2 { font-family: var(--kid); font-size: 44px; font-weight: 800; margin-bottom: 10px; }
+.k-row { display: flex; gap: 34px; padding: 14px 6px 24px; flex-wrap: wrap; }
+.k-tile { width: 400px; height: 250px; border: 0; border-radius: 40px; background: var(--c); color: #fff; display: grid; place-items: center; align-content: center; gap: 4px; box-shadow: 0 10px 0 rgba(0,0,0,.14); transition: transform .15s; }
+.k-tile .em { font-size: 120px; line-height: 1; filter: drop-shadow(0 6px 0 rgba(0,0,0,.12)); }
+.k-tile .nm { font-family: var(--kid); font-size: 38px; font-weight: 800; text-shadow: 0 3px 0 rgba(0,0,0,.15); }
+.k-tile:focus { transform: scale(1.06) rotate(-1.5deg); }
+.k-body { height: calc(100% - 140px); padding: 0 80px 40px; position: relative; }
+.k-center { display: grid; place-items: center; align-content: center; gap: 30px; height: 100%; text-align: center; }
+.k-msg { font-size: 46px; font-weight: 800; min-height: 64px; }
+
+/* Movie player */
+.player { display: grid; grid-template-rows: 1fr auto auto; gap: 22px; height: 100%; }
+.mv-stage { position: relative; border-radius: 40px; overflow: hidden; background: #8fd3ff; }
+.mv-scene { position: absolute; inset: 0; animation: fade .7s; }
+.mv-ground { position: absolute; left: -5%; right: -5%; bottom: -12%; height: 34%; border-radius: 50% 50% 0 0; }
+.actor { position: absolute; transform: translate(-50%, -50%); line-height: 1; }
+.actor > span { display: inline-block; }
+.mv-caption { font-size: 44px; font-weight: 700; text-align: center; background: var(--k-card); border-radius: 30px; padding: 18px 40px; min-height: 100px; display: grid; place-items: center; }
+.mv-bar { display: flex; align-items: center; gap: 20px; }
+.mv-prog { flex: 1; display: flex; gap: 10px; }
+.mv-prog i { flex: 1; height: 16px; border-radius: 8px; background: rgba(32,48,79,.18); overflow: hidden; }
+.mv-prog i b { display: block; height: 100%; width: 0; background: #ff8a3d; }
+.mv-prog i.done b { width: 100%; }
+.paused .mv-stage *, .paused .mv-prog * { animation-play-state: paused !important; }
+.drop { position: absolute; top: -40px; width: 6px; height: 34px; border-radius: 3px; background: rgba(255,255,255,.75); animation: fall linear infinite; }
+.twinkle-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: twinkle 2s ease-in-out infinite; }
+.the-end { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 30px; background: rgba(255,255,255,.75); text-align: center; }
+.the-end h2 { font-family: var(--kid); font-size: 120px; font-weight: 800; }
+
+.a-bob { animation: bob 1.6s ease-in-out infinite; }
+.a-sway { animation: sway 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.a-spin { animation: spin 14s linear infinite; }
+.a-hop { animation: hop .9s ease-in-out infinite; }
+.a-wiggle { animation: wiggle .8s ease-in-out infinite; }
+.a-walk { animation: walk 7s linear both; }
+.a-walkin { animation: walkin 3s ease-out both; }
+.a-swim { animation: swim 8s ease-in-out infinite alternate; }
+.a-fly { animation: fly 5s ease-in-out infinite; }
+.a-float { animation: floatup 4s ease-in infinite; }
+.a-launch { animation: launch 4s ease-in both; }
+.a-shake { animation: shake .3s linear infinite; }
+.a-grow { animation: grow 2s cubic-bezier(.2,.9,.3,1.3) both; }
+.a-twinkle { animation: twinkle 1.8s ease-in-out infinite; }
+.a-orbit { animation: orbit 6s linear infinite; }
+.a-flyhome { animation: flyhome 6s ease-in-out both; }
+.a-flip { transform: scaleX(-1); }
+
+/* Kids games */
+.g-grid { display: grid; gap: 22px; justify-content: center; }
+.card { width: 200px; height: 200px; border: 0; border-radius: 34px; font-size: 110px; background: #6c8cff; color: #fff; box-shadow: 0 8px 0 rgba(0,0,0,.15); transition: transform .2s, background .2s; }
+.card:focus { transform: scale(1.06); }
+.card.open, .card.done { background: var(--k-card); }
+.card.done { opacity: .55; }
+.card .q { font-size: 90px; font-weight: 800; font-family: var(--kid); }
+.hole { width: 250px; height: 200px; border: 0; border-radius: 50% 50% 40px 40px; background: #7a5233; box-shadow: inset 0 -30px 0 #5b3a22, 0 8px 0 rgba(0,0,0,.15); font-size: 120px; display: grid; place-items: center; }
+.hole span { display: inline-block; transition: transform .15s; transform: translateY(40px) scale(0); }
+.hole.up span { transform: translateY(0) scale(1); }
+.cell { width: 220px; height: 220px; border: 0; border-radius: 34px; background: var(--k-card); font-size: 130px; box-shadow: 0 8px 0 rgba(0,0,0,.12); }
+.cell.win { background: #ffe08a; }
+.count-box { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 18px; width: 1100px; min-height: 360px; padding: 30px; border-radius: 40px; background: var(--k-card); font-size: 110px; }
+.choice { width: 220px; height: 170px; border: 0; border-radius: 36px; font-size: 100px; font-weight: 800; font-family: var(--kid); color: #fff; box-shadow: 0 8px 0 rgba(0,0,0,.15); }
+.choice.no { animation: shake .4s; opacity: .45; }
+.choice.yes { background: #39c27a !important; }
+.pads { display: grid; grid-template-columns: repeat(2, 330px); gap: 30px; }
+.pad { height: 250px; border: 0; border-radius: 50px; opacity: .55; box-shadow: 0 10px 0 rgba(0,0,0,.18); transition: opacity .1s, transform .1s; }
+.pad.lit { opacity: 1; transform: scale(1.04); filter: brightness(1.2); }
+.pad:focus { opacity: .85; }
+.palette { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.swatch { width: 74px; height: 74px; border-radius: 50%; border: 6px solid #fff; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+.swatch.sel { box-shadow: 0 0 0 6px var(--k-ink); }
+.canvas-wrap { position: relative; width: 1760px; height: 700px; border-radius: 36px; overflow: hidden; background: #fff; box-shadow: 0 8px 0 rgba(0,0,0,.1); }
+#draw { width: 1760px; height: 700px; display: block; touch-action: none; }
+#draw:focus { outline: 6px solid #ff8a3d; outline-offset: -6px; }
+.cursor { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 4px solid var(--k-ink); pointer-events: none; }
+.cursor.down { background: rgba(255,138,61,.35); }
+.animals { display: grid; grid-template-columns: repeat(6, 1fr); gap: 26px; }
+.animal { height: 250px; border: 0; border-radius: 40px; background: var(--k-card); display: grid; place-items: center; align-content: center; box-shadow: 0 8px 0 rgba(0,0,0,.1); position: relative; }
+.animal .em { font-size: 120px; line-height: 1.1; display: inline-block; }
+.animal .nm { font-size: 32px; font-weight: 800; }
+.animal.talk .em { animation: hop .5s 2; }
+.bubble { position: absolute; top: -26px; right: -10px; background: #ff8a3d; color: #fff; font-size: 32px; font-weight: 800; padding: 6px 22px; border-radius: 999px; animation: pop .3s; }
+.abc { display: grid; grid-template-columns: 1fr 640px; gap: 40px; height: 100%; }
+.letters { display: grid; grid-template-columns: repeat(7, 1fr); gap: 18px; align-content: start; }
+.letter { height: 140px; border: 0; border-radius: 30px; font-family: var(--kid); font-size: 80px; font-weight: 800; color: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.14); }
+.abc-card { background: var(--k-card); border-radius: 40px; display: grid; place-items: center; align-content: center; text-align: center; padding: 30px; height: 760px; box-shadow: 0 8px 0 rgba(0,0,0,.1); }
+.abc-card .L { font-size: 220px; font-weight: 800; line-height: 1; }
+.abc-card .E { font-size: 200px; line-height: 1.1; animation: pop .4s; }
+.abc-card .W { font-size: 60px; font-weight: 800; }
+.piano { display: flex; gap: 14px; justify-content: center; }
+.key { width: 190px; height: 520px; border: 0; border-radius: 0 0 36px 36px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 30px; gap: 6px; font-family: var(--kid); font-weight: 800; color: #fff; box-shadow: 0 10px 0 rgba(0,0,0,.18); transition: transform .08s; }
+.key b { font-size: 70px; line-height: 1; }
+.key small { font-size: 26px; opacity: .85; }
+.key.hit { transform: translateY(10px); box-shadow: 0 0 0 rgba(0,0,0,.18); filter: brightness(1.15); }
+.confetti { position: absolute; top: -30px; width: 22px; height: 30px; border-radius: 4px; animation: confetti 2.4s ease-in forwards; z-index: 60; pointer-events: none; }
+.kids-modal { font-family: var(--kid); text-align: center; background: #fff !important; color: var(--k-ink); border: 0 !important; }
+.kids-modal h2 { font-family: var(--kid); font-weight: 800; }
+.kids-modal p { color: var(--k-ink) !important; }
+.kids-modal .m-actions { justify-content: center; }
+.kids-modal .btn { background: #eef3ff; color: var(--k-ink); font-weight: 700; }
+.kids-modal .btn:focus { background: var(--k-ink); color: #fff; }
+.kids-modal .btn.primary { background: #ff8a3d; color: #fff; }
+.big-stars { font-size: 110px; letter-spacing: 10px; }
+
+@keyframes fade { from { opacity: 0 } }
+@keyframes rise { from { opacity: 0; transform: translateY(40px) } }
+@keyframes spin { to { transform: rotate(360deg) } }
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-14px) } 75% { transform: translateX(14px) } }
+@keyframes wobble { 0%,100% { transform: rotate(-12deg) } 50% { transform: rotate(12deg) } }
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-24px) } }
+@keyframes sway { 0%,100% { transform: rotate(-6deg) } 50% { transform: rotate(6deg) } }
+@keyframes hop { 0%,100% { transform: translateY(0) } 40% { transform: translateY(-70px) } 60% { transform: translateY(-70px) } }
+@keyframes wiggle { 0%,100% { transform: rotate(-10deg) } 50% { transform: rotate(10deg) } }
+@keyframes walk { from { transform: translateX(-900px) } to { transform: translateX(900px) } }
+@keyframes walkin { from { transform: translateX(-800px) } to { transform: translateX(0) } }
+@keyframes swim { from { transform: translateX(-400px) } to { transform: translateX(400px) } }
+@keyframes fly { 0%,100% { transform: translate(0,0) } 25% { transform: translate(160px,-60px) } 50% { transform: translate(300px,20px) } 75% { transform: translate(120px,60px) } }
+@keyframes floatup { from { transform: translateY(0); opacity: 1 } to { transform: translateY(-500px); opacity: 0 } }
+@keyframes launch { 0% { transform: translateY(0) } 20% { transform: translate(-4px,0) } 25% { transform: translate(4px,-10px) } 100% { transform: translateY(-1100px) } }
+@keyframes grow { from { transform: scale(0) } }
+@keyframes twinkle { 0%,100% { opacity: .25; transform: scale(.8) } 50% { opacity: 1; transform: scale(1.2) } }
+@keyframes orbit { from { transform: rotate(0) translateX(330px) rotate(0) } to { transform: rotate(360deg) translateX(330px) rotate(-360deg) } }
+@keyframes flyhome { from { transform: translate(-900px,-300px) rotate(20deg) } to { transform: translate(0,0) rotate(0) } }
+@keyframes fall { to { transform: translateY(1200px) } }
+@keyframes pop { from { transform: scale(0) } 70% { transform: scale(1.15) } }
+@keyframes confetti { to { transform: translateY(1150px) rotate(720deg) } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+    <main id="screen"></main>
+    <footer class="hints" aria-hidden="true">
+      <span><kbd>◀ ▲ ▼ ▶</kbd>Move</span>
+      <span><kbd>OK</kbd>Enter: select</span>
+      <span><kbd>Back</kbd>Esc / Backspace</span>
+      <span><kbd>H</kbd>Home</span>
+      <span class="grow"></span>
+      <span id="hint-status"></span>
+    </footer>
+    <div id="modals"></div>
+    <div id="toast" role="status"></div>
+    <div id="boot">
+      <div class="logo"><span class="logo-mark"></span>Raken TV</div>
+      <p>Starting your TV…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================
+   Basics
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad2 = (n) => String(n).padStart(2, '0');
+const rand = (n) => Math.floor(Math.random() * n);
+const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+function fitStage() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  $('#stage').style.setProperty('--s', s);
+}
+addEventListener('resize', fitStage);
+fitStage();
+
+/* =========================================================
+   Saved settings (per TV, in this browser)
+   ========================================================= */
+const KEY = 'rakentv.v1';
+const DEFAULTS = {
+  pin: null,
+  region: 'auto',            // auto | SE | other
+  h24: true,
+  openMode: 'popup',         // popup | tab
+  parental: {
+    tiktok:    { access: 'pin', limit: 60 },
+    instagram: { access: 'pin', limit: 60 },
+    svtplay:   { access: 'pin', limit: 0 },
+    svtbarn:   { access: 'pin', limit: 0 },
+  },
+  usage: { day: '', secs: {} },
+  alarms: [{ id: 1, h: 7, m: 0, label: 'Wake up', repeat: 'weekdays', on: true }],
+  world: ['Europe/London', 'America/New_York', 'Asia/Tokyo', 'Australia/Sydney', 'Asia/Dubai'],
+  snoozeAt: 0,
+  stars: 0,
+  clockTab: 'clock',
+};
+function load() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch { saved = {}; }
+  const s = { ...structuredClone(DEFAULTS), ...saved };
+  s.parental = { ...structuredClone(DEFAULTS.parental), ...(saved.parental || {}) };
+  return s;
+}
+let S = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage unavailable: settings last for this visit */ } }
+
+/* =========================================================
+   Region
+   ========================================================= */
+function detectedRegion() {
+  try { if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Europe/Stockholm') return 'SE'; } catch {}
+  const langs = navigator.languages || [navigator.language || ''];
+  return langs.some((l) => /-SE$/i.test(l) || /^sv\b/i.test(l)) ? 'SE' : 'other';
+}
+const region = () => (S.region === 'auto' ? detectedRegion() : S.region);
+const regionName = (r = region()) => (r === 'SE' ? 'Sweden' : 'outside Sweden');
+
+/* =========================================================
+   Time helpers
+   ========================================================= */
+const LOCAL_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return 'UTC'; } })();
+function fmtTime(d, tz, secs) {
+  const o = { hour: S.h24 ? '2-digit' : 'numeric', minute: '2-digit', hour12: !S.h24 };
+  if (secs) o.second = '2-digit';
+  if (tz) o.timeZone = tz;
+  return d.toLocaleTimeString(S.h24 ? 'en-GB' : 'en-US', o);
+}
+function fmtHM(h, m) {
+  if (S.h24) return `${pad2(h)}:${pad2(m)}`;
+  return `${((h + 11) % 12) + 1}:${pad2(m)} ${h < 12 ? 'AM' : 'PM'}`;
+}
+function fmtDate(d, tz) {
+  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...(tz ? { timeZone: tz } : {}) });
+}
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t - y0) / 86400000 + 1) / 7);
+}
+function tzParts(d, tz) {
+  const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(d);
+  const g = (t) => +p.find((x) => x.type === t).value;
+  return { y: g('year'), mo: g('month'), d: g('day'), h: g('hour') % 24, mi: g('minute') };
+}
+function tzOffsetMin(d, tz) {
+  const a = tzParts(d, tz);
+  return Math.round((Date.UTC(a.y, a.mo - 1, a.d, a.h, a.mi) - d.getTime()) / 60000);
+}
+function fmtDur(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${pad2(m)}:${pad2(s)}`;
+}
+function fmtMinutes(min) {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+function usedToday(id) {
+  if (S.usage.day !== todayKey()) S.usage = { day: todayKey(), secs: {} };
+  return S.usage.secs[id] || 0;
+}
+
+/* =========================================================
+   Sound + speech
+   ========================================================= */
+let AC = null;
+function audio() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { AC = null; } }
+  if (AC && AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function tone(freq, dur = 0.25, type = 'sine', vol = 0.2, delay = 0) {
+  const ac = audio(); if (!ac) return;
+  const t = ac.currentTime + delay;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(ac.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+const cheer = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.18, i * 0.09));
+const boop = () => tone(220, 0.25, 'square', 0.08);
+let beepTimer = null, ringing = 0;
+function startBeep() {
+  ringing++;
+  if (beepTimer) return;
+  const beep = () => { tone(880, 0.16, 'square', 0.12); tone(880, 0.16, 'square', 0.12, 0.25); };
+  beep(); beepTimer = setInterval(beep, 1000);
+}
+function stopBeep() {
+  ringing = Math.max(0, ringing - 1);
+  if (!ringing) { clearInterval(beepTimer); beepTimer = null; }
+}
+function say(text) {
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.92; u.pitch = 1.15; u.lang = 'en-GB';
+    speechSynthesis.speak(u);
+  } catch { /* no speech on this device */ }
+}
+const hush = () => { try { speechSynthesis.cancel(); } catch {} };
+
+/* =========================================================
+   Icons
+   ========================================================= */
+const PANDA = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="22" cy="24" r="15" fill="#1b1b22"/><circle cx="78" cy="24" r="15" fill="#1b1b22"/><circle cx="50" cy="54" r="39" fill="#fff"/><ellipse cx="34" cy="50" rx="10" ry="13" fill="#1b1b22" transform="rotate(-28 34 50)"/><ellipse cx="66" cy="50" rx="10" ry="13" fill="#1b1b22" transform="rotate(28 66 50)"/><circle cx="36" cy="50" r="4" fill="#fff"/><circle cx="64" cy="50" r="4" fill="#fff"/><ellipse cx="50" cy="65" rx="6.5" ry="4.5" fill="#1b1b22"/><path d="M43 73q7 6 14 0" stroke="#1b1b22" stroke-width="3.2" fill="none" stroke-linecap="round"/><circle cx="26" cy="66" r="5.5" fill="#ff9fb2" opacity=".75"/><circle cx="74" cy="66" r="5.5" fill="#ff9fb2" opacity=".75"/></svg>`;
+const gearTeeth = Array.from({ length: 8 }, (_, i) => `<rect x="44" y="12" width="12" height="20" rx="3" transform="rotate(${i * 45} 50 50)"/>`).join('');
+const ICONS = {
+  clock: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#26345f"/><circle cx="50" cy="50" r="30" fill="#f4f6ff"/><path d="M50 50V31M50 50l13 8" stroke="#26345f" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="4" fill="#ff7a59"/></svg>`,
+  kids: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#7fd0ff"/><circle cx="82" cy="16" r="9" fill="#ffd34d"/><g transform="translate(14 16) scale(.72)">${PANDA.replace(/<\/?svg[^>]*>/g, '')}</g></svg>`,
+  youtube: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#1a1a1a"/><rect x="18" y="29" width="64" height="42" rx="13" fill="#ff1f1f"/><path d="M44 40v20l17-10z" fill="#fff"/></svg>`,
+  tiktok: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#0d0d12"/><g font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="58" text-anchor="middle"><text x="47" y="70" fill="#25f4ee">♪</text><text x="53" y="74" fill="#fe2c55">♪</text><text x="50" y="72" fill="#fff">♪</text></g></svg>`,
+  netflix: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#000"/><path d="M33 20h11l12 40V20h11v60H56L44 41v39H33z" fill="#e50914"/></svg>`,
+  instagram: `<svg viewBox="0 0 100 100"><defs><linearGradient id="ig" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#feda75"/><stop offset=".35" stop-color="#fa7e1e"/><stop offset=".6" stop-color="#d62976"/><stop offset=".85" stop-color="#962fbf"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient></defs><rect width="100" height="100" fill="url(#ig)"/><rect x="26" y="26" width="48" height="48" rx="14" fill="none" stroke="#fff" stroke-width="5.5"/><circle cx="50" cy="50" r="11" fill="none" stroke="#fff" stroke-width="5.5"/><circle cx="64" cy="36" r="3.5" fill="#fff"/></svg>`,
+  svtplay: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#0f2a1d"/><circle cx="50" cy="42" r="20" fill="#2dd36f"/><path d="M45 33v18l14-9z" fill="#0f2a1d"/><text x="50" y="82" fill="#fff" font-family="Arial,sans-serif" font-weight="700" font-size="15" text-anchor="middle">SVT Play</text></svg>`,
+  svtbarn: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#ffe14d"/><circle cx="26" cy="30" r="13" fill="#ff5d8f"/><circle cx="72" cy="26" r="10" fill="#3dc1ff"/><circle cx="78" cy="70" r="12" fill="#5ad16b"/><text x="48" y="64" fill="#2b2b6b" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-weight="900" font-size="26" text-anchor="middle">Barn</text><text x="48" y="40" fill="#2b2b6b" font-family="Arial,sans-serif" font-weight="700" font-size="13" text-anchor="middle">SVT</text></svg>`,
+  settings: `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#3a4466"/><g fill="#dfe5f7">${gearTeeth}<circle cx="50" cy="50" r="24"/></g><circle cx="50" cy="50" r="10" fill="#3a4466"/></svg>`,
+};
+const TAB_ICONS = {
+  clock: '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="20" cy="20" r="15"/><path d="M20 11v9l6 4"/></svg>',
+  timer: '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="20" cy="23" r="13"/><path d="M16 5h8M20 5v5M20 23l5-5"/></svg>',
+  alarm: '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M10 28V18a10 10 0 0 1 20 0v10l3 4H7z"/><path d="M17 36h6"/></svg>',
+  world: '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3"><circle cx="20" cy="20" r="15"/><path d="M5 20h30M20 5c-8 9-8 21 0 30M20 5c8 9 8 21 0 30"/></svg>',
+};
+
+/* =========================================================
+   App catalogue
+   ========================================================= */
+const APPS = [
+  { id: 'clock', bg: '#26345f', name: 'Clock', kind: 'builtin', color: '#4561c9', desc: 'The time, a timer, alarms that ring on the TV, and clocks for cities around the world.' },
+  { id: 'kids', bg: '#7fd0ff', name: 'Panda Kids', kind: 'builtin', color: '#3fb7ff', desc: 'Cartoon movies, games, drawing, animal sounds, ABC and a piano. Made for little hands and a remote.' },
+  { id: 'settings', bg: '#3a4466', name: 'Settings', kind: 'builtin', color: '#6672a3', desc: 'Parental controls and PIN, region, clock format and how browser apps open.' },
+  { id: 'youtube', bg: '#1a1a1a', name: 'YouTube', kind: 'web', url: 'https://www.youtube.com/', color: '#ff1f1f', desc: 'Videos, music and channels. Runs in a TV browser window.' },
+  { id: 'netflix', bg: '#000', name: 'Netflix', kind: 'web', url: 'https://www.netflix.com/', color: '#e50914', desc: 'Series and films. Sign in with your Netflix account. Runs in a TV browser window.' },
+  { id: 'tiktok', bg: '#0d0d12', name: 'TikTok', kind: 'web', url: 'https://www.tiktok.com/', color: '#25f4ee', parental: true, desc: 'Short videos. Protected by parental controls.' },
+  { id: 'instagram', bg: '#d62976', name: 'Instagram', kind: 'web', url: 'https://www.instagram.com/', color: '#d62976', parental: true, desc: 'Photos, Reels and stories. Protected by parental controls.' },
+  { id: 'svtplay', bg: '#0f2a1d', name: 'SVT Play', kind: 'web', url: 'https://www.svtplay.se/', color: '#2dd36f', parental: true, region: 'SE', desc: 'Swedish public TV: news, sport, series and documentaries. Only available in Sweden.' },
+  { id: 'svtbarn', bg: '#ffe14d', name: 'SVT Barn', kind: 'web', url: 'https://www.svtbarn.se/', color: '#ffd23d', parental: true, region: 'SE', desc: 'Swedish children\'s TV, games and songs from SVT. Only available in Sweden.' },
+];
+const appById = (id) => APPS.find((a) => a.id === id);
+
+/* =========================================================
+   Router + screens
+   ========================================================= */
+const SCREENS = {};
+const stack = [];
+let scr = { timers: [], keys: null, tick: null, cleanup: [] };
+function every(fn, ms) { const t = setInterval(fn, ms); scr.timers.push(t); return t; }
+function later(fn, ms) { const t = setTimeout(fn, ms); scr.timers.push(t); return t; }
+function cleanup() {
+  scr.timers.forEach((t) => { clearInterval(t); clearTimeout(t); });
+  scr.cleanup.forEach((fn) => fn());
+  hush();
+  scr = { timers: [], keys: null, tick: null, cleanup: [] };
+}
+function focusKey(el) { return el && el.dataset ? el.dataset.k : null; }
+function go(name, params = {}) {
+  const cur = stack[stack.length - 1];
+  if (cur) cur.focus = focusKey(document.activeElement);
+  stack.push({ name, params });
+  show();
+}
+function back() {
+  if (modals.length) { if (modals[modals.length - 1].dismissable) closeModal(); return; }
+  if (stack.length <= 1) return;
+  stack.pop();
+  show();
+}
+function goHome() {
+  closeAllModals();
+  stack.length = 1;
+  show();
+}
+function show() {
+  cleanup();
+  const top = stack[stack.length - 1];
+  const el = $('#screen');
+  el.className = 's-' + top.name;
+  el.innerHTML = '';
+  SCREENS[top.name].render(el, top.params, top);
+  const want = top.focus && el.querySelector(`[data-k="${CSS.escape(top.focus)}"]`);
+  (want || el.querySelector('.autofocus') || el.querySelector('.f'))?.focus();
+  tick(true);
+}
+
+/* =========================================================
+   D-pad navigation
+   ========================================================= */
+function scope() { return modals.length ? modals[modals.length - 1].el : $('#screen'); }
+function focusables() {
+  return $$('.f', scope()).filter((el) => !el.disabled && el.offsetParent !== null);
+}
+function moveFocus(dir) {
+  const items = focusables();
+  const cur = document.activeElement;
+  if (!items.includes(cur)) { items[0]?.focus(); return true; }
+  const r = cur.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let best = null, bestScore = Infinity;
+  for (const el of items) {
+    if (el === cur) continue;
+    const q = el.getBoundingClientRect();
+    const qx = q.left + q.width / 2, qy = q.top + q.height / 2;
+    let main, cross, drift;
+    if (dir === 'right' || dir === 'left') {
+      const ok = dir === 'right' ? q.left >= r.right - r.width * 0.3 && qx > cx : q.right <= r.left + r.width * 0.3 && qx < cx;
+      if (!ok) continue;
+      main = dir === 'right' ? Math.max(0, q.left - r.right) : Math.max(0, r.left - q.right);
+      cross = Math.max(0, Math.max(q.top, r.top) - Math.min(q.bottom, r.bottom));
+      drift = Math.abs(qy - cy);
+    } else {
+      const ok = dir === 'down' ? q.top >= r.bottom - r.height * 0.3 && qy > cy : q.bottom <= r.top + r.height * 0.3 && qy < cy;
+      if (!ok) continue;
+      main = dir === 'down' ? Math.max(0, q.top - r.bottom) : Math.max(0, r.top - q.bottom);
+      cross = Math.max(0, Math.max(q.left, r.left) - Math.min(q.right, r.right));
+      drift = Math.abs(qx - cx);
+    }
+    const score = main + cross * 3 + drift * 0.15;
+    if (score < bestScore) { bestScore = score; best = el; }
+  }
+  if (best && best.classList.contains('tab') && !cur.classList.contains('tab')) {
+    best = best.parentElement.querySelector('.tab.on') || best;
+  }
+  if (best) { best.focus(); return true; }
+  return false;
+}
+const BACK_CODES = new Set([461, 10009, 8, 27, 166]);
+document.addEventListener('keydown', (e) => {
+  audio();
+  if (!$('#boot').classList.contains('out')) { hideBoot(); e.preventDefault(); return; }
+  const m = modals[modals.length - 1];
+  if (m && m.keys && m.keys(e)) { e.preventDefault(); return; }
+  if (!m && scr.keys && scr.keys(e)) { e.preventDefault(); return; }
+  const dirs = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  if (dirs[e.key]) { e.preventDefault(); moveFocus(dirs[e.key]); return; }
+  if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'BrowserBack' || e.key === 'GoBack' || BACK_CODES.has(e.keyCode) && e.key !== 'Enter') {
+    e.preventDefault(); back(); return;
+  }
+  if ((e.key === 'h' || e.key === 'H' || e.key === 'Home' || e.key === 'BrowserHome') && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault(); goHome(); return;
+  }
+  if (e.key === 'Enter' && document.activeElement && !/^(BUTTON|A)$/.test(document.activeElement.tagName) && document.activeElement.classList.contains('f')) {
+    e.preventDefault(); document.activeElement.click();
+  }
+});
+document.addEventListener('pointerdown', () => audio(), true);
+document.addEventListener('mouseover', (e) => {
+  const f = e.target.closest && e.target.closest('.f');
+  if (f && scope().contains(f) && document.activeElement !== f && f.tagName !== 'CANVAS') f.focus({ preventScroll: true });
+});
+
+/* =========================================================
+   Modals, PIN pad, toast
+   ========================================================= */
+const modals = [];
+function modal({ title = '', html = '', buttons = [], cls = '', onClose, dismissable = true }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-wrap';
+  wrap.innerHTML = `<div class="modal ${cls}" role="dialog" aria-modal="true">${title ? `<h2>${esc(title)}</h2>` : ''}<div class="m-body">${html}</div><div class="m-actions"></div></div>`;
+  const m = { el: wrap, onClose, dismissable, prevFocus: document.activeElement, keys: null };
+  const acts = $('.m-actions', wrap);
+  buttons.forEach((b, i) => {
+    const bt = document.createElement('button');
+    bt.className = 'btn f' + (b.primary ? ' primary' : '') + (b.focus || (i === 0 && !buttons.some((x) => x.focus)) ? ' autofocus' : '');
+    bt.textContent = b.label;
+    bt.onclick = () => { closeModal(m); b.action && b.action(); };
+    acts.append(bt);
+  });
+  $('#modals').append(wrap);
+  modals.push(m);
+  (wrap.querySelector('.m-body .autofocus') || wrap.querySelector('.m-body .f') || wrap.querySelector('.autofocus') || wrap.querySelector('.f'))?.focus();
+  return m;
+}
+function closeModal(m = modals[modals.length - 1]) {
+  const i = modals.indexOf(m);
+  if (i < 0) return;
+  modals.splice(i, 1);
+  m.el.remove();
+  m.onClose && m.onClose();
+  if (m.prevFocus && document.contains(m.prevFocus) && scope().contains(m.prevFocus)) m.prevFocus.focus();
+  else focusables()[0]?.focus();
+}
+function closeAllModals() { while (modals.length) closeModal(); }
+
+function pinPad({ title, sub, onDone }) {
+  let val = '';
+  const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, 'OK'];
+  const m = modal({
+    title, cls: 'pin',
+    html: `<p class="m-sub">${esc(sub)}</p><div class="pin-dots">${'<i></i>'.repeat(4)}</div><p class="pin-err" aria-live="polite"></p>
+      <div class="pin-grid">${keys.map((k) => `<button class="f pin-k${k === 1 ? ' autofocus' : ''}" data-key="${k}" aria-label="${k === '⌫' ? 'Delete' : k}">${k}</button>`).join('')}</div>`,
+    buttons: [{ label: 'Cancel' }],
+  });
+  const box = $('.modal', m.el), dots = $$('.pin-dots i', m.el), err = $('.pin-err', m.el);
+  const draw = () => dots.forEach((d, i) => d.classList.toggle('on', i < val.length));
+  const submit = () => {
+    const r = onDone(val);
+    if (r === undefined || r === true) { closeModal(m); return; }
+    err.textContent = r; val = ''; draw(); boop();
+    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+  };
+  const press = (k) => {
+    k = String(k);
+    if (k === '⌫') val = val.slice(0, -1);
+    else if (k === 'OK') { if (val.length === 4) submit(); return; }
+    else if (val.length < 4) { val += k; err.textContent = ''; }
+    draw();
+    if (val.length === 4 && k !== '⌫') setTimeout(submit, 160);
+  };
+  $$('.pin-k', m.el).forEach((b) => (b.onclick = () => press(b.dataset.key)));
+  m.keys = (e) => {
+    if (/^[0-9]$/.test(e.key)) { press(e.key); return true; }
+    if (e.key === 'Backspace' && val) { press('⌫'); return true; }
+    return false;
+  };
+}
+function askPin(reason, cb) {
+  if (!S.pin) {
+    pinPad({
+      title: 'Create a parental PIN', sub: `${reason} Pick 4 digits that only grown-ups know.`,
+      onDone: (p) => {
+        setTimeout(() => pinPad({
+          title: 'Enter the PIN again', sub: 'Type the same 4 digits to confirm.',
+          onDone: (p2) => {
+            if (p2 !== p) return 'The two PINs did not match. Type it again.';
+            S.pin = p; save(); toast('Parental PIN saved');
+            setTimeout(cb, 0);
+          },
+        }), 0);
+      },
+    });
+    return;
+  }
+  pinPad({
+    title: 'Enter the parental PIN', sub: reason,
+    onDone: (p) => { if (p !== S.pin) return 'Wrong PIN. Try again.'; setTimeout(cb, 0); },
+  });
+}
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
+}
+
+/* =========================================================
+   Global ticker: clocks, alarms, timer, screen time
+   ========================================================= */
+const T = { dur: 300, left: 300, endAt: null, state: 'idle' };   // the Clock app's timer: idle | running | paused
+let lastSec = -1, lastMinuteKey = '';
+function timerLeft() { return T.endAt ? Math.max(0, (T.endAt - Date.now()) / 1000) : T.left; }
+function tick(force) {
+  const now = new Date();
+  if (T.endAt && Date.now() >= T.endAt) {
+    T.endAt = null; T.left = T.dur; T.state = 'idle';
+    ring('Time is up', `Your ${fmtDur(T.dur)} timer has finished.`);
+    scr.tick && scr.tick(now);
+  }
+  const sec = Math.floor(now.getTime() / 1000);
+  if (!force) { if (sec === lastSec) return; lastSec = sec; }
+  $$('[data-clock]').forEach((el) => {
+    const kind = el.dataset.clock, tz = el.dataset.tz || undefined;
+    let v;
+    if (kind === 'date') v = fmtDate(now, tz);
+    else if (kind === 'timer') v = T.endAt ? '⏱ ' + fmtDur(timerLeft()) : '';
+    else v = fmtTime(now, tz, kind === 'secs');
+    if (el.textContent !== v) el.textContent = v;
+    if (kind === 'timer') el.hidden = !T.endAt;
+  });
+  scr.tick && scr.tick(now);
+  if (force) return;
+  trackUsage();
+  const live = APPS.filter((a) => isRunning(a.id)).map((a) => a.name);
+  $('#hint-status').textContent = live.length ? `Running: ${live.join(', ')}` : '';
+  const mk = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}`;
+  if (mk !== lastMinuteKey) { lastMinuteKey = mk; checkAlarms(now); }
+  if (S.snoozeAt && Date.now() >= S.snoozeAt) {
+    S.snoozeAt = 0; save();
+    ring('Alarm', 'Snooze is over.', true);
+  }
+}
+const REPEATS = { once: 'Once', daily: 'Every day', weekdays: 'Mon–Fri', weekends: 'Sat & Sun' };
+function repeatsToday(a, d) {
+  const wd = d.getDay();
+  return a.repeat === 'once' || a.repeat === 'daily' || (a.repeat === 'weekdays' && wd >= 1 && wd <= 5) || (a.repeat === 'weekends' && (wd === 0 || wd === 6));
+}
+function checkAlarms(now) {
+  let changed = false;
+  for (const a of S.alarms) {
+    if (a.on && a.h === now.getHours() && a.m === now.getMinutes() && repeatsToday(a, now)) {
+      if (a.repeat === 'once') { a.on = false; changed = true; }
+      ring(a.label, `It's ${fmtHM(a.h, a.m)}.`, true);
+    }
+  }
+  if (changed) { save(); scr.tick && scr.tick(now, true); }
+}
+function ring(title, sub, snooze) {
+  startBeep();
+  modal({
+    title, cls: 'ring',
+    html: `<div class="ring-icon" aria-hidden="true">⏰</div><p>${esc(sub)}</p>`,
+    buttons: [
+      { label: 'Stop', primary: true },
+      ...(snooze ? [{ label: 'Snooze 5 min', action: () => { S.snoozeAt = Date.now() + 5 * 60000; save(); toast('Snoozed for 5 minutes'); } }] : []),
+    ],
+    onClose: stopBeep,
+  });
+}
+
+/* =========================================================
+   Browser apps: they launch into their own browser window
+   ========================================================= */
+const running = {};   // appId -> { win, manual, active }
+const isRunning = (id) => { const r = running[id]; return !!r && ((r.win && !r.win.closed) || r.active); };
+function splashHtml(app) {
+  return `<!doctype html><title>${esc(app.name)}</title><style>html,body{margin:0;height:100%;background:#0a1020;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#eef2fb}
+  .i{width:180px;height:180px;border-radius:44px;overflow:hidden;margin:0 auto 28px;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:p 1s ease-in-out infinite alternate}
+  .i svg{width:100%;height:100%}p{text-align:center;font-size:22px;opacity:.7}@keyframes p{to{transform:scale(1.06)}}</style>
+  <div><div class="i">${ICONS[app.id]}</div><p>Starting ${esc(app.name)}…</p></div>`;
+}
+function limitInfo(app) {
+  const pc = app.parental && S.parental[app.id];
+  if (!pc || !pc.limit) return null;
+  const used = usedToday(app.id), total = pc.limit * 60;
+  return { used, total, left: Math.max(0, total - used) };
+}
+function launch(app) {
+  if (app.kind === 'builtin') { go(app.id); return; }
+  if (app.region && region() !== app.region) {
+    modal({
+      title: `${app.name} isn't available here`,
+      html: `<p>${esc(app.name)} only works in Sweden. This TV is set to ${regionName()}.</p><p class="m-sub">If you are in Sweden, change the region in Settings.</p>`,
+      buttons: [{ label: 'OK', primary: true }, { label: 'Open region settings', action: () => go('settings', { section: 'region' }) }],
+    });
+    return;
+  }
+  const r = running[app.id];
+  if (r && r.win && !r.win.closed) { try { r.win.focus(); } catch {} go('web', { id: app.id }); return; }
+  const pc = app.parental && S.parental[app.id];
+  if (pc) {
+    if (pc.access === 'block') {
+      modal({ title: `${app.name} is blocked`, html: `<p>A grown-up has turned off ${esc(app.name)} on this TV.</p><p class="m-sub">Parents can change this in Settings → Parental controls.</p>`, buttons: [{ label: 'OK', primary: true }] });
+      return;
+    }
+    const li = limitInfo(app);
+    if (li && li.left <= 0) {
+      modal({ title: 'Time is up for today', html: `<p>${esc(app.name)} has been used for ${fmtMinutes(pc.limit)} today, which is the daily limit.</p><p class="m-sub">It opens again tomorrow. A grown-up can give more time in Settings.</p>`, buttons: [{ label: 'OK', primary: true }] });
+      return;
+    }
+    if (pc.access === 'pin') { askPin(`${app.name} has parental controls.`, () => openWeb(app)); return; }
+  }
+  openWeb(app);
+}
+function openWeb(app) {
+  let win = null;
+  try {
+    if (S.openMode === 'popup') {
+      const w = screen.availWidth || 1280, h = screen.availHeight || 720;
+      win = window.open('', 'rakentv_' + app.id, `popup=yes,width=${w},height=${h},left=0,top=0`);
+      if (win) {
+        try { win.document.open(); win.document.write(splashHtml(app)); win.document.close(); } catch { /* window already showing the site */ }
+        setTimeout(() => { try { win.location.replace(app.url); } catch {} }, 900);
+      }
+    } else {
+      win = window.open(app.url, 'rakentv_' + app.id);
+    }
+  } catch { win = null; }
+  running[app.id] = { win, manual: !win, active: false };
+  go('web', { id: app.id });
+}
+function stopApp(id) {
+  const r = running[id];
+  if (r && r.win && !r.win.closed) { try { r.win.close(); } catch {} }
+  delete running[id];
+}
+function trackUsage() {
+  let dirty = false;
+  for (const id of Object.keys(running)) {
+    const r = running[id];
+    if (r.win && r.win.closed) {
+      delete running[id];
+      const top = stack[stack.length - 1];
+      if (top.name === 'web' && top.params.id === id) { toast(`${appById(id).name} closed`); goHome(); }
+      continue;
+    }
+    if (!r.win && !r.active) continue;
+    const app = appById(id);
+    if (app.parental) {
+      usedToday(id);
+      S.usage.secs[id] = (S.usage.secs[id] || 0) + 1;
+      dirty = true;
+      const li = limitInfo(app);
+      if (li && li.left <= 0) {
+        stopApp(id);
+        const top = stack[stack.length - 1];
+        if (top.name === 'web' && top.params.id === id) goHome();
+        modal({ title: 'Time is up for today', html: `<p>You've used ${esc(app.name)} for ${fmtMinutes(S.parental[id].limit)} today. It has been closed.</p><p class="m-sub">See you tomorrow!</p>`, buttons: [{ label: 'OK', primary: true }] });
+      }
+    }
+  }
+  if (dirty && Date.now() % 10000 < 1000) save();
+}
+addEventListener('beforeunload', save);
+
+/* =========================================================
+   HOME
+   ========================================================= */
+function appChips(app) {
+  const c = [];
+  if (app.kind === 'builtin') c.push('<span class="chip ok">Built in</span>');
+  else c.push('<span class="chip">Opens in the TV browser</span>');
+  if (app.parental) {
+    const pc = S.parental[app.id];
+    const label = pc.access === 'block' ? 'Blocked by parental controls' : pc.access === 'pin' ? 'Parental controls · PIN' : 'Parental controls · allowed';
+    c.push(`<span class="chip lock">🔒 ${label}</span>`);
+    const li = limitInfo(app);
+    if (li) c.push(`<span class="chip ${li.left < 600 ? 'warn' : ''}">${fmtMinutes(Math.ceil(li.left / 60))} left today</span>`);
+  }
+  if (app.region) c.push(region() === app.region ? '<span class="chip">🇸🇪 Sweden only</span>' : '<span class="chip warn">🇸🇪 Only available in Sweden</span>');
+  if (isRunning(app.id)) c.push('<span class="chip ok">● Running</span>');
+  return c.join('');
+}
+function tileHtml(app) {
+  const unavailable = app.region && region() !== app.region;
+  const blocked = app.parental && S.parental[app.id].access === 'block';
+  const badge = isRunning(app.id) ? '<span class="badge live">On</span>' : app.parental && S.parental[app.id].access !== 'allow' ? '<span class="badge">🔒</span>' : '';
+  return `<div class="tile-wrap"><button class="tile f${unavailable || blocked ? ' dim' : ''}" data-k="app-${app.id}" data-app="${app.id}" style="--bg:${app.bg}" aria-label="${esc(app.name)}"><span class="t-art">${app.id === 'instagram' ? ICONS[app.id].replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ') : ICONS[app.id]}</span>${badge}<span class="t-name">${esc(app.name)}</span></button></div>`;
+}
+SCREENS.home = {
+  render(el) {
+    const builtin = APPS.filter((a) => a.kind === 'builtin'), web = APPS.filter((a) => a.kind === 'web');
+    el.innerHTML = `
+      <header class="topbar">
+        <div class="logo"><span class="logo-mark"></span>Raken TV</div>
+        <div class="tb-right">
+          <span class="chip" data-clock="timer" hidden></span>
+          <span class="chip">${region() === 'SE' ? '🇸🇪 Sweden' : '🌍 Outside Sweden'}</span>
+          <span data-clock="date"></span>
+          <span class="tb-time tnum" data-clock="time"></span>
+        </div>
+      </header>
+      <section class="hero" id="hero" aria-live="polite"></section>
+      <section class="rows">
+        <h3>Built-in apps</h3><div class="row">${builtin.map(tileHtml).join('')}</div>
+        <h3>Streaming &amp; social</h3><div class="row">${web.map(tileHtml).join('')}</div>
+      </section>`;
+    const hero = $('#hero', el);
+    const paint = (app) => {
+      hero.style.setProperty('--c', app.color);
+      hero.innerHTML = `<div class="hero-glow"></div><div class="hero-icon">${ICONS[app.id]}</div>
+        <div class="hero-text"><h1>${esc(app.name)}</h1><p>${esc(app.desc)}</p><div class="hero-chips">${appChips(app)}</div></div>`;
+    };
+    $$('.tile', el).forEach((t) => {
+      const app = appById(t.dataset.app);
+      t.addEventListener('focus', () => paint(app));
+      t.addEventListener('click', () => launch(app));
+    });
+    paint(APPS[0]);
+  },
+};
+
+/* =========================================================
+   App header used by Clock, Settings and browser apps
+   ========================================================= */
+function appHead(title) {
+  return `<header class="app-head"><button class="btn back-btn f" data-k="back" onclick="back()">‹ Back</button><h1>${esc(title)}</h1><span class="chip" data-clock="timer" hidden></span><span class="tb-time tnum" data-clock="time"></span></header>`;
+}
+
+/* =========================================================
+   CLOCK
+   ========================================================= */
+const CITIES = [
+  ['Stockholm', 'Europe/Stockholm'], ['London', 'Europe/London'], ['Paris', 'Europe/Paris'], ['Berlin', 'Europe/Berlin'],
+  ['Oslo', 'Europe/Oslo'], ['Copenhagen', 'Europe/Copenhagen'], ['Helsinki', 'Europe/Helsinki'], ['Reykjavik', 'Atlantic/Reykjavik'],
+  ['Madrid', 'Europe/Madrid'], ['Rome', 'Europe/Rome'], ['Athens', 'Europe/Athens'], ['Istanbul', 'Europe/Istanbul'],
+  ['Moscow', 'Europe/Moscow'], ['Cairo', 'Africa/Cairo'], ['Nairobi', 'Africa/Nairobi'], ['Lagos', 'Africa/Lagos'],
+  ['Dubai', 'Asia/Dubai'], ['Mumbai', 'Asia/Kolkata'], ['Bangkok', 'Asia/Bangkok'], ['Singapore', 'Asia/Singapore'],
+  ['Beijing', 'Asia/Shanghai'], ['Seoul', 'Asia/Seoul'], ['Tokyo', 'Asia/Tokyo'], ['Sydney', 'Australia/Sydney'],
+  ['Auckland', 'Pacific/Auckland'], ['Honolulu', 'Pacific/Honolulu'], ['Los Angeles', 'America/Los_Angeles'], ['Chicago', 'America/Chicago'],
+  ['New York', 'America/New_York'], ['Toronto', 'America/Toronto'], ['Mexico City', 'America/Mexico_City'], ['São Paulo', 'America/Sao_Paulo'],
+];
+const cityName = (tz) => (CITIES.find((c) => c[1] === tz) || [tz.split('/').pop().replace(/_/g, ' ')])[0];
+const CLOCK_TABS = [['clock', 'Clock'], ['timer', 'Timer'], ['alarm', 'Alarm'], ['world', 'World clock']];
+
+SCREENS.clock = {
+  render(el, params) {
+    let tab = params.tab || S.clockTab || 'clock';
+    el.innerHTML = appHead('Clock') + `<div class="clock-app"><nav class="tabs">${CLOCK_TABS.map(([id, n]) =>
+      `<button class="tab f" data-k="tab-${id}" data-tab="${id}">${TAB_ICONS[id]}${n}</button>`).join('')}</nav><section class="panel" id="panel"></section></div>`;
+    const panel = $('#panel', el);
+    const open = (id) => {
+      tab = id; S.clockTab = id; save();
+      $$('.tab', el).forEach((t) => t.classList.toggle('on', t.dataset.tab === id));
+      panel.innerHTML = '';
+      scr.tick = null;
+      CLOCK_PANELS[id](panel);
+      tick(true);
+    };
+    $$('.tab', el).forEach((t) => {
+      t.addEventListener('focus', () => { if (t.dataset.tab !== tab) open(t.dataset.tab); });
+      t.addEventListener('click', () => { open(t.dataset.tab); moveFocus('right'); });
+    });
+    open(tab);
+    later(() => $(`[data-tab="${tab}"]`, el)?.focus(), 0);
+  },
+};
+const CLOCK_PANELS = {
+  clock(p) {
+    const ticks = Array.from({ length: 60 }, (_, i) => {
+      const big = i % 5 === 0;
+      return `<line x1="0" y1="${big ? -250 : -258}" x2="0" y2="-272" stroke="${big ? '#eef2fb' : '#4c5a86'}" stroke-width="${big ? 7 : 3}" stroke-linecap="round" transform="rotate(${i * 6})"/>`;
+    }).join('');
+    const nums = Array.from({ length: 12 }, (_, i) => {
+      const n = i + 1, a = (n * 30 - 90) * Math.PI / 180;
+      return `<text x="${Math.cos(a) * 210}" y="${Math.sin(a) * 210 + 14}" text-anchor="middle" font-size="40" fill="#97a3c6" font-family="Lexend, sans-serif">${n}</text>`;
+    }).join('');
+    p.innerHTML = `<div class="clock-face">
+      <svg class="analog" viewBox="-290 -290 580 580" role="img" aria-label="Analog clock">
+        <circle r="285" fill="#0e1528"/>${ticks}${nums}
+        <line id="hh" x1="0" y1="24" x2="0" y2="-140" stroke="#eef2fb" stroke-width="16" stroke-linecap="round"/>
+        <line id="mh" x1="0" y1="30" x2="0" y2="-215" stroke="#eef2fb" stroke-width="10" stroke-linecap="round"/>
+        <line id="sh" x1="0" y1="44" x2="0" y2="-235" stroke="#ff7a59" stroke-width="4" stroke-linecap="round"/>
+        <circle r="14" fill="#ff7a59"/>
+      </svg>
+      <div class="digital"><span class="eyebrow">${esc(cityName(LOCAL_TZ))} · local time</span><div class="big tnum" data-clock="secs"></div><div class="date" data-clock="date"></div><div class="week" id="wk"></div></div>
+    </div>`;
+    scr.tick = (now) => {
+      const s = now.getSeconds(), m = now.getMinutes() + s / 60, h = (now.getHours() % 12) + m / 60;
+      $('#hh', p)?.setAttribute('transform', `rotate(${h * 30})`);
+      $('#mh', p)?.setAttribute('transform', `rotate(${m * 6})`);
+      $('#sh', p)?.setAttribute('transform', `rotate(${s * 6})`);
+      const wk = $('#wk', p); if (wk) wk.textContent = `Week ${isoWeek(now)} · ${now.getFullYear()}`;
+    };
+  },
+
+  timer(p) {
+    const C = 2 * Math.PI * 230;
+    const presets = [1, 3, 5, 10, 15, 30, 60];
+    p.innerHTML = `<div class="timer-wrap">
+      <div class="timer-ring"><svg viewBox="0 0 520 520"><circle cx="260" cy="260" r="230" fill="none" stroke="#24305a" stroke-width="26"/>
+        <circle id="arc" cx="260" cy="260" r="230" fill="none" stroke="#ffcf5c" stroke-width="26" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
+        <div class="read"><div><b class="tnum" id="tleft"></b><span id="tstate"></span></div></div></div>
+      <div class="timer-ctrl">
+        <div class="group"><button class="btn primary f" id="tgo" data-k="tgo"></button><button class="btn f" id="treset" data-k="treset">Reset</button></div>
+        <h3>Change time</h3>
+        <div class="group"><button class="btn small f" data-add="-60" data-k="m1">− 1 min</button><button class="btn small f" data-add="60" data-k="p1">+ 1 min</button><button class="btn small f" data-add="-10" data-k="m10">− 10 s</button><button class="btn small f" data-add="10" data-k="p10">+ 10 s</button></div>
+        <h3>Quick start</h3>
+        <div class="group">${presets.map((m) => `<button class="btn small f" data-preset="${m}" data-k="pr${m}">${m} min</button>`).join('')}</div>
+      </div></div>`;
+    const draw = () => {
+      const left = timerLeft();
+      $('#tleft', p).textContent = fmtDur(left);
+      $('#tstate', p).textContent = T.state === 'running' ? `Rings at ${fmtHM(new Date(T.endAt).getHours(), new Date(T.endAt).getMinutes())}` : T.state === 'paused' ? 'Paused' : `${fmtDur(T.dur)} timer`;
+      $('#tgo', p).textContent = T.state === 'running' ? 'Pause' : T.state === 'paused' ? 'Resume' : 'Start';
+      $('#arc', p).setAttribute('stroke-dashoffset', String(C * (1 - (T.dur ? left / T.dur : 0))));
+    };
+    $('#tgo', p).onclick = () => {
+      if (T.state === 'running') { T.left = timerLeft(); T.endAt = null; T.state = 'paused'; }
+      else { T.endAt = Date.now() + T.left * 1000; T.state = 'running'; }
+      draw();
+    };
+    $('#treset', p).onclick = () => { T.endAt = null; T.left = T.dur; T.state = 'idle'; draw(); };
+    $$('[data-add]', p).forEach((b) => (b.onclick = () => {
+      const d = +b.dataset.add;
+      if (T.state === 'running') { T.endAt = Math.max(Date.now() + 1000, T.endAt + d * 1000); T.dur = Math.max(T.dur, timerLeft()); }
+      else { T.left = Math.max(10, Math.min(359999, T.left + d)); T.dur = T.state === 'idle' ? T.left : Math.max(T.dur, T.left); }
+      draw();
+    }));
+    $$('[data-preset]', p).forEach((b) => (b.onclick = () => {
+      T.dur = T.left = +b.dataset.preset * 60; T.endAt = Date.now() + T.dur * 1000; T.state = 'running'; draw();
+      toast(`Timer started: ${b.dataset.preset} min`);
+    }));
+    scr.tick = draw;
+    draw();
+  },
+
+  alarm(p) {
+    const draw = () => {
+      const now = new Date();
+      const next = nextAlarm(now);
+      const list = [...S.alarms].sort((a, b) => a.h * 60 + a.m - (b.h * 60 + b.m));
+      p.innerHTML = `<div class="p-head"><div><h2>Alarms</h2><p>${next ? `Next alarm in ${fmtMinutes(Math.max(1, Math.round((next - now) / 60000)))}` : 'No alarms are on'}</p></div>
+        <button class="btn primary f" id="addAlarm" data-k="addAlarm">+ Add alarm</button></div>
+        ${list.length ? `<div class="alarm-list">${list.map((a) => `
+          <div class="alarm-row${a.on ? '' : ' off'}">
+            <div><div class="when tnum">${fmtHM(a.h, a.m)}</div><div class="meta">${esc(a.label)} · ${REPEATS[a.repeat]}</div></div>
+            <button class="btn toggle f${a.on ? ' on' : ''}" data-tog="${a.id}" data-k="tog${a.id}">${a.on ? 'On' : 'Off'}</button>
+            <button class="btn f" data-edit="${a.id}" data-k="ed${a.id}">Edit</button>
+          </div>`).join('')}</div>` : '<div class="empty">No alarms yet. Add one and the TV will ring, even while another app is open.</div>'}`;
+      $('#addAlarm', p).onclick = () => editAlarm(null, draw);
+      $$('[data-tog]', p).forEach((b) => (b.onclick = () => {
+        const a = S.alarms.find((x) => x.id === +b.dataset.tog); a.on = !a.on; save();
+        const k = b.dataset.k; draw(); $(`[data-k="${k}"]`, p)?.focus();
+        if (a.on) toast(`Alarm set for ${fmtHM(a.h, a.m)}`);
+      }));
+      $$('[data-edit]', p).forEach((b) => (b.onclick = () => editAlarm(S.alarms.find((x) => x.id === +b.dataset.edit), draw)));
+    };
+    scr.tick = (now, changed) => { if (changed) draw(); };
+    draw();
+  },
+
+  world(p) {
+    const draw = () => {
+      const zones = [LOCAL_TZ, ...S.world.filter((z) => z !== LOCAL_TZ)];
+      p.innerHTML = `<div class="p-head"><div><h2>World clock</h2><p>Select a city to remove it.</p></div></div>
+        <div class="world">${zones.map((tz, i) => `
+          <button class="city f${i === 0 ? ' here' : ''}" data-tz="${tz}" data-k="city-${tz}">
+            <span class="cn"><span>${esc(i === 0 ? cityName(tz) + ' (here)' : cityName(tz))}</span><span data-dn="${tz}"></span></span>
+            <span class="ct tnum" data-clock="time" data-tz="${tz}"></span>
+            <span class="cd" data-off="${tz}"></span>
+          </button>`).join('')}
+          <button class="city add f" id="addCity" data-k="addCity">+ Add city</button></div>`;
+      $$('.city[data-tz]', p).forEach((b, i) => {
+        if (i === 0) { b.onclick = () => toast('This is your local time'); return; }
+        b.onclick = () => modal({
+          title: `Remove ${cityName(b.dataset.tz)}?`, html: '<p class="m-sub">You can add it back any time.</p>',
+          buttons: [{ label: 'Remove', primary: true, action: () => { S.world = S.world.filter((z) => z !== b.dataset.tz); save(); draw(); $('#addCity', p).focus(); } }, { label: 'Cancel' }],
+        });
+      });
+      $('#addCity', p).onclick = () => {
+        const left = CITIES.filter(([, tz]) => tz !== LOCAL_TZ && !S.world.includes(tz));
+        const m = modal({
+          title: 'Add a city',
+          html: `<div class="pick-grid">${left.map(([n, tz]) => `<button class="btn f" data-pick="${tz}">${esc(n)}</button>`).join('')}</div>`,
+          buttons: [{ label: 'Cancel' }],
+        });
+        $$('[data-pick]', m.el).forEach((b) => (b.onclick = () => {
+          S.world.push(b.dataset.pick); save(); closeModal(m); draw();
+          $(`[data-k="city-${CSS.escape(b.dataset.pick)}"]`, p)?.focus(); toast(`${cityName(b.dataset.pick)} added`);
+        }));
+      };
+      tick(true);
+    };
+    scr.tick = (now) => {
+      const here = tzOffsetMin(now, LOCAL_TZ), hp = tzParts(now, LOCAL_TZ);
+      $$('[data-off]', p).forEach((el) => {
+        const tz = el.dataset.off, off = tzOffsetMin(now, tz) - here, tp = tzParts(now, tz);
+        const dd = Math.round((Date.UTC(tp.y, tp.mo - 1, tp.d) - Date.UTC(hp.y, hp.mo - 1, hp.d)) / 86400000);
+        const day = dd === 0 ? 'Today' : dd > 0 ? 'Tomorrow' : 'Yesterday';
+        const h = Math.trunc(off / 60), mm = Math.abs(off % 60);
+        const rel = off === 0 ? 'same time' : `${off > 0 ? '+' : '−'}${Math.abs(h)}${mm ? ':' + pad2(mm) : ''} h`;
+        el.textContent = tz === LOCAL_TZ ? fmtDate(now) : `${day}, ${rel}`;
+        const dn = $(`[data-dn="${CSS.escape(tz)}"]`, p); if (dn) dn.textContent = tp.h >= 6 && tp.h < 18 ? '☀️' : '🌙';
+      });
+    };
+    draw();
+  },
+};
+function nextAlarm(now) {
+  let best = null;
+  for (const a of S.alarms) {
+    if (!a.on) continue;
+    for (let d = 0; d < 8; d++) {
+      const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, a.h, a.m);
+      if (t > now && repeatsToday(a, t)) { if (!best || t < best) best = t; break; }
+    }
+  }
+  return best;
+}
+const LABELS = ['Alarm', 'Wake up', 'School', 'Work', 'Bedtime', 'Medicine', 'Leave the house'];
+function editAlarm(alarm, done) {
+  const a = alarm ? { ...alarm } : { id: Date.now(), h: 7, m: 30, label: 'Alarm', repeat: 'once', on: true };
+  const m = modal({
+    title: alarm ? 'Edit alarm' : 'New alarm',
+    html: `<p class="m-sub">Use ▲ ▼ on the hour and minutes to change them.</p>
+      <div class="steppers">
+        <div class="stepper"><button class="arrow" tabindex="-1" data-st="h" data-d="1" aria-label="Hour up">▲</button><button class="val f tnum autofocus" data-step="h"></button><button class="arrow" tabindex="-1" data-st="h" data-d="-1" aria-label="Hour down">▼</button></div>
+        <span class="colon">:</span>
+        <div class="stepper"><button class="arrow" tabindex="-1" data-st="m" data-d="1" aria-label="Minute up">▲</button><button class="val f tnum" data-step="m"></button><button class="arrow" tabindex="-1" data-st="m" data-d="-1" aria-label="Minute down">▼</button></div>
+      </div>
+      <div class="opt-row"><button class="btn f cyc" id="rep"></button><button class="btn f cyc" id="lab"></button></div>`,
+    buttons: [
+      { label: 'Save', primary: true, action: () => {
+        a.on = true;
+        if (alarm) Object.assign(alarm, a); else S.alarms.push(a);
+        save(); done(); toast(`Alarm set for ${fmtHM(a.h, a.m)}`);
+      } },
+      ...(alarm ? [{ label: 'Delete', action: () => { S.alarms = S.alarms.filter((x) => x.id !== alarm.id); save(); done(); toast('Alarm deleted'); } }] : []),
+      { label: 'Cancel' },
+    ],
+  });
+  const draw = () => {
+    $('[data-step="h"]', m.el).textContent = S.h24 ? pad2(a.h) : `${((a.h + 11) % 12) + 1}${a.h < 12 ? 'a' : 'p'}`;
+    $('[data-step="m"]', m.el).textContent = pad2(a.m);
+    $('#rep', m.el).textContent = `Repeat: ${REPEATS[a.repeat]}`;
+    $('#lab', m.el).textContent = `Name: ${a.label}`;
+  };
+  const step = (k, d) => { if (k === 'h') a.h = (a.h + d + 24) % 24; else a.m = (a.m + d + 60) % 60; draw(); };
+  $$('[data-st]', m.el).forEach((b) => (b.onclick = () => step(b.dataset.st, +b.dataset.d)));
+  $$('[data-step]', m.el).forEach((b) => (b.onclick = () => step(b.dataset.step, 1)));
+  const reps = Object.keys(REPEATS);
+  $('#rep', m.el).onclick = () => { a.repeat = reps[(reps.indexOf(a.repeat) + 1) % reps.length]; draw(); };
+  $('#lab', m.el).onclick = () => { a.label = LABELS[(LABELS.indexOf(a.label) + 1) % LABELS.length]; draw(); };
+  m.keys = (e) => {
+    const st = document.activeElement && document.activeElement.dataset.step;
+    if (st && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { step(st, e.key === 'ArrowUp' ? (st === 'm' && e.repeat ? 5 : 1) : (st === 'm' && e.repeat ? -5 : -1)); return true; }
+    return false;
+  };
+  draw();
+}
+
+/* =========================================================
+   BROWSER APP SCREEN
+   ========================================================= */
+SCREENS.web = {
+  render(el, { id }) {
+    const app = appById(id);
+    const r = running[id] || { win: null, manual: true, active: false };
+    running[id] = r;
+    el.innerHTML = appHead(app.name) + `<div class="web"><div class="web-card" style="--c:${app.color}"><div class="hero-glow"></div>
+      <div class="hero-icon">${ICONS[id]}</div>
+      <div class="web-body">
+        <p class="eyebrow" id="wstate"></p>
+        <h1>${esc(app.name)}</h1>
+        <p id="wtext"></p>
+        <div id="wlimit"></div>
+        <div class="web-actions" id="wact"></div>
+      </div></div></div>`;
+    const act = $('#wact', el);
+    if (r.win) {
+      $('#wstate', el).textContent = 'Running in the TV browser';
+      $('#wtext', el).textContent = `${app.name} is open in its own browser window. Switch back here with Alt+Tab, or close that window to come home.`;
+      act.innerHTML = `<button class="btn primary f" id="wshow" data-k="wshow">Show ${esc(app.name)}</button><button class="btn f" id="wclose" data-k="wclose">Close ${esc(app.name)}</button><button class="btn f" id="whome" data-k="whome">Home</button>`;
+      $('#wshow', el).onclick = () => { try { r.win.focus(); } catch {} };
+    } else {
+      $('#wstate', el).textContent = S.openMode === 'popup' ? 'Ready to open' : 'Ready to open in a new tab';
+      $('#wtext', el).textContent = S.openMode === 'popup'
+        ? `This browser stopped the TV window from opening. Select Open ${app.name} to start it in a new tab instead.`
+        : `Select Open ${app.name} to start it in a new browser tab.`;
+      act.innerHTML = `<a class="btn primary f autofocus" id="wshow" data-k="wshow" href="${app.url}" target="_blank" rel="noopener">Open ${esc(app.name)}</a><button class="btn f" id="wclose" data-k="wclose">I'm done</button><button class="btn f" id="whome" data-k="whome">Home</button>`;
+      $('#wshow', el).addEventListener('click', () => { r.active = true; $('#wstate', el).textContent = `${app.name} is open in another tab`; });
+    }
+    $('#wclose', el).onclick = () => { stopApp(id); save(); goHome(); };
+    $('#whome', el).onclick = goHome;
+    scr.tick = () => {
+      const li = limitInfo(app), box = $('#wlimit', el);
+      if (!box) return;
+      if (!li) { box.innerHTML = app.parental ? '<p class="m-sub">No daily limit for this app.</p>' : ''; return; }
+      const pct = Math.round((li.left / li.total) * 100);
+      box.innerHTML = `<p>${fmtDur(li.left)} left today of ${fmtMinutes(li.total / 60)}</p><div class="meter${pct < 20 ? ' low' : ''}"><i style="width:${pct}%"></i></div>`;
+    };
+  },
+};
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+const SECTIONS = [['parental', 'Parental controls'], ['region', 'Region'], ['display', 'Clock & display'], ['browser', 'Browser apps'], ['about', 'About this TV']];
+const LIMITS = [0, 15, 30, 45, 60, 90, 120, 180];
+const ACCESS = { allow: 'Allowed', pin: 'Ask for PIN', block: 'Blocked' };
+let parentalUnlocked = false;
+SCREENS.settings = {
+  render(el, params, entry) {
+    let section = params.section || 'parental';
+    el.innerHTML = appHead('Settings') + `<div class="settings"><nav class="tabs">${SECTIONS.map(([id, n]) =>
+      `<button class="tab f" data-k="sec-${id}" data-sec="${id}">${n}</button>`).join('')}</nav><section class="s-panel" id="sp"></section></div>`;
+    const sp = $('#sp', el);
+    const open = (id, focusPanel) => {
+      section = id; entry.params.section = id;
+      $$('.tab', el).forEach((t) => t.classList.toggle('on', t.dataset.sec === id));
+      if (id === 'parental' && !parentalUnlocked) {
+        sp.innerHTML = `<h2>Parental controls</h2><p>Choose which apps need a PIN, block apps, and set daily time limits for TikTok, Instagram, SVT Play and SVT Barn.</p>
+          <button class="btn primary f" id="unlock" data-k="unlock">${S.pin ? 'Enter PIN to change' : 'Create a PIN to start'}</button>`;
+        $('#unlock', sp).onclick = () => askPin('Parental controls are protected.', () => { parentalUnlocked = true; open('parental', true); });
+      } else SETTINGS_PANELS[id](sp, () => open(id));
+      if (focusPanel) sp.querySelector('.f')?.focus();
+    };
+    $$('.tab', el).forEach((t) => {
+      t.addEventListener('focus', () => { if (t.dataset.sec !== section) open(t.dataset.sec); });
+      t.addEventListener('click', () => { open(t.dataset.sec); sp.querySelector('.f')?.focus(); });
+    });
+    scr.cleanup.push(() => { parentalUnlocked = false; });
+    open(section);
+    later(() => $(`[data-sec="${section}"]`, el)?.focus(), 0);
+  },
+};
+const SETTINGS_PANELS = {
+  parental(sp, redraw) {
+    const apps = APPS.filter((a) => a.parental);
+    sp.innerHTML = `<h2>Parental controls</h2><p>Settings stay on this TV. Daily limits reset at midnight.</p>
+      <div class="s-section"><div class="s-list">${apps.map((a) => {
+        const pc = S.parental[a.id], used = Math.floor(usedToday(a.id) / 60);
+        return `<div class="s-row"><div class="ico">${ICONS[a.id]}</div><div><div class="nm">${esc(a.name)}</div><div class="sub">Used today: ${fmtMinutes(used)}${a.region ? ' · Sweden only' : ''}</div></div>
+          <button class="btn f cyc" data-acc="${a.id}" data-k="acc-${a.id}">${ACCESS[pc.access]}</button>
+          <button class="btn f cyc" data-lim="${a.id}" data-k="lim-${a.id}">${pc.limit ? fmtMinutes(pc.limit) + ' a day' : 'No time limit'}</button></div>`;
+      }).join('')}</div></div>
+      <div class="s-section"><h3>PIN and time</h3><div class="opt-row" style="justify-content:flex-start;margin:0">
+        <button class="btn f" id="chpin" data-k="chpin">Change PIN</button><button class="btn f" id="resetTime" data-k="resetTime">Give more time today</button><button class="btn f" id="lockNow" data-k="lockNow">Lock settings</button></div></div>`;
+    const refocus = (k) => { redraw(); $(`[data-k="${k}"]`, sp)?.focus(); };
+    $$('[data-acc]', sp).forEach((b) => (b.onclick = () => {
+      const pc = S.parental[b.dataset.acc], ks = Object.keys(ACCESS);
+      pc.access = ks[(ks.indexOf(pc.access) + 1) % ks.length]; save(); refocus(b.dataset.k);
+    }));
+    $$('[data-lim]', sp).forEach((b) => (b.onclick = () => {
+      const pc = S.parental[b.dataset.lim];
+      pc.limit = LIMITS[(LIMITS.indexOf(pc.limit) + 1) % LIMITS.length]; save(); refocus(b.dataset.k);
+    }));
+    $('#chpin', sp).onclick = () => pinPad({
+      title: 'New PIN', sub: 'Pick 4 new digits.',
+      onDone: (p) => { setTimeout(() => pinPad({ title: 'Enter the new PIN again', sub: 'Type it once more to confirm.', onDone: (p2) => { if (p2 !== p) return 'The two PINs did not match.'; S.pin = p; save(); toast('PIN changed'); } }), 0); },
+    });
+    $('#resetTime', sp).onclick = () => { S.usage = { day: todayKey(), secs: {} }; save(); toast('Today\'s screen time was reset'); refocus('resetTime'); };
+    $('#lockNow', sp).onclick = () => { parentalUnlocked = false; redraw(); sp.querySelector('.f')?.focus(); toast('Parental controls locked'); };
+  },
+  region(sp, redraw) {
+    const det = detectedRegion();
+    const opts = [['auto', 'Automatic', `Detected: ${det === 'SE' ? 'Sweden' : 'outside Sweden'}`], ['SE', 'Sweden', 'SVT Play and SVT Barn work'], ['other', 'Outside Sweden', 'SVT apps are hidden']];
+    sp.innerHTML = `<h2>Region</h2><p>SVT Play and SVT Barn are only available in Sweden. Automatic uses this TV's time zone and language.</p>
+      <div class="s-section">${opts.map(([v, n, s]) => `<button class="btn opt f${S.region === v ? ' sel' : ''}" data-reg="${v}" data-k="reg-${v}">${n}<small>${s}</small></button>`).join('')}</div>`;
+    $$('[data-reg]', sp).forEach((b) => (b.onclick = () => { S.region = b.dataset.reg; save(); redraw(); $(`[data-k="${b.dataset.k}"]`, sp)?.focus(); toast(`Region: ${regionName()}`); }));
+  },
+  display(sp, redraw) {
+    sp.innerHTML = `<h2>Clock &amp; display</h2><p>How the time is shown everywhere on the TV.</p>
+      <div class="s-section"><h3>Clock format</h3>
+        <button class="btn opt f${S.h24 ? ' sel' : ''}" data-h="1" data-k="h24">24-hour<small>18:45</small></button>
+        <button class="btn opt f${!S.h24 ? ' sel' : ''}" data-h="0" data-k="h12">12-hour<small>6:45 PM</small></button></div>`;
+    $$('[data-h]', sp).forEach((b) => (b.onclick = () => { S.h24 = b.dataset.h === '1'; save(); redraw(); $(`[data-k="${b.dataset.k}"]`, sp)?.focus(); tick(true); }));
+  },
+  browser(sp, redraw) {
+    sp.innerHTML = `<h2>Browser apps</h2><p>YouTube, Netflix, TikTok, Instagram, SVT Play and SVT Barn run on their real websites. These sites don't allow being shown inside another page, so the TV opens them in their own browser window.</p>
+      <div class="s-section"><h3>Open browser apps in</h3>
+        <button class="btn opt f${S.openMode === 'popup' ? ' sel' : ''}" data-om="popup" data-k="om-popup">A TV window<small>Full-screen window, tracks screen time</small></button>
+        <button class="btn opt f${S.openMode === 'tab' ? ' sel' : ''}" data-om="tab" data-k="om-tab">A new tab<small>Use this if windows are blocked</small></button></div>
+      <p>If nothing opens, allow pop-ups for this page in your browser.</p>`;
+    $$('[data-om]', sp).forEach((b) => (b.onclick = () => { S.openMode = b.dataset.om; save(); redraw(); $(`[data-k="${b.dataset.k}"]`, sp)?.focus(); }));
+  },
+  about(sp) {
+    sp.innerHTML = `<h2>About this TV</h2><p>Raken TV 1.0 · ${APPS.length} apps · Region: ${regionName()} · Time zone: ${esc(LOCAL_TZ)}</p>
+      <div class="s-section"><h3>Built in</h3><p class="m-sub" style="margin:0">Clock, Panda Kids and Settings run on the TV itself and work offline.</p></div>
+      <div class="s-section"><h3>Browser apps</h3><p class="m-sub" style="margin:0">YouTube, Netflix, TikTok, Instagram, SVT Play and SVT Barn open their websites in a TV browser window.</p></div>
+      <div class="opt-row" style="justify-content:flex-start"><button class="btn f" id="restart" data-k="restart">Restart TV</button><button class="btn f" id="factory" data-k="factory">Reset everything</button></div>`;
+    $('#restart', sp).onclick = () => { showBoot(); goHome(); };
+    $('#factory', sp).onclick = () => {
+      const doReset = () => modal({
+        title: 'Reset everything?', html: '<p>This removes the PIN, alarms, world clocks, stars and screen time from this TV.</p>',
+        buttons: [{ label: 'Cancel', focus: true }, { label: 'Reset', primary: true, action: () => {
+          Object.keys(running).forEach(stopApp);
+          S = structuredClone(DEFAULTS); save(); toast('The TV was reset'); showBoot(); goHome();
+        } }],
+      });
+      S.pin ? askPin('Resetting needs the parental PIN.', doReset) : doReset();
+    };
+  },
+};
+
+/* =========================================================
+   PANDA KIDS
+   ========================================================= */
+const MOVIES = [
+  { id: 'picnic', title: "Panda's Picnic", em: '🐼', c: '#45c46a', scenes: [
+    { bg: 'linear-gradient(#8fd3ff,#d7f1ff)', ground: '#6fd06f', a: [['☀️', 84, 16, 150, 'spin'], ['🌳', 74, 52, 300, 'sway'], ['🐼', 34, 64, 220, 'walkin'], ['🧺', 46, 72, 110, 'walkin']], t: 'One sunny morning, Panda packed a picnic basket.' },
+    { bg: 'linear-gradient(#9bdcff,#e4f6ff)', ground: '#7bd66b', a: [['🌼', 12, 76, 90, 'sway'], ['🌷', 48, 80, 90, 'sway'], ['🌻', 86, 74, 100, 'sway'], ['🦋', 30, 30, 80, 'fly'], ['🐼', 50, 64, 200, 'walk']], t: 'Panda walked through the meadow, humming a happy song.' },
+    { bg: 'linear-gradient(#8fd3ff,#d7f1ff)', ground: '#6fd06f', a: [['🌳', 50, 42, 460, 'sway'], ['🐼', 36, 68, 200, 'bob'], ['🧺', 56, 76, 110, ''], ['🍎', 66, 80, 70, 'bob'], ['🍓', 72, 80, 60, 'bob']], t: 'Under a big tree, Panda found the perfect spot.' },
+    { bg: 'linear-gradient(#8fd3ff,#d7f1ff)', ground: '#6fd06f', a: [['🐼', 30, 66, 200, 'bob'], ['🐰', 56, 70, 160, 'hop'], ['🦊', 78, 68, 170, 'hop']], t: 'Then Rabbit and Fox came to say hello!' },
+    { bg: 'linear-gradient(#ffd59e,#ffeacc)', ground: '#8bcf5a', a: [['🎋', 20, 58, 180, 'sway'], ['🐼', 40, 66, 190, 'wiggle'], ['🐰', 60, 70, 150, 'bob'], ['🦊', 78, 68, 160, 'bob'], ['🍓', 50, 84, 70, 'wiggle'], ['🥪', 66, 86, 70, 'wiggle']], t: 'They shared bamboo, berries and sandwiches.' },
+    { bg: 'linear-gradient(#1b2a5c,#3a4b8c)', ground: '#2f5f3a', stars: true, a: [['🌙', 80, 20, 150, 'bob'], ['🐼', 36, 66, 200, 'sway'], ['🐰', 58, 70, 150, 'sway'], ['🦊', 76, 68, 160, 'sway']], t: 'When the stars came out, the friends waved goodnight.' },
+  ] },
+  { id: 'rocket', title: 'The Little Rocket', em: '🚀', c: '#5b6cff', scenes: [
+    { bg: 'linear-gradient(#7ec8ff,#c9ecff)', ground: '#b7b7c8', a: [['🚀', 50, 56, 260, 'shake'], ['☁️', 18, 24, 140, 'bob'], ['☁️', 82, 18, 120, 'bob']], t: 'Little Rocket dreamed of visiting the stars.' },
+    { bg: 'linear-gradient(#7ec8ff,#c9ecff)', ground: '#b7b7c8', a: [['🚀', 50, 56, 260, 'launch'], ['💨', 46, 80, 160, 'grow'], ['💨', 56, 82, 140, 'grow']], t: 'Three, two, one... blast off!' },
+    { bg: 'linear-gradient(#0b1240,#24307a)', stars: true, a: [['🚀', 40, 52, 220, 'fly'], ['⭐', 80, 24, 80, 'twinkle'], ['⭐', 16, 70, 60, 'twinkle']], t: 'Up, up, past the fluffy clouds and into space!' },
+    { bg: 'linear-gradient(#0b1240,#1a2260)', stars: true, a: [['🌕', 50, 48, 300, 'spin'], ['🚀', 50, 48, 120, 'orbit']], t: 'Hello, Moon! Little Rocket flew round and round.' },
+    { bg: 'linear-gradient(#2a0f4f,#5b2a8c)', stars: true, a: [['🪐', 72, 34, 220, 'spin'], ['👽', 34, 60, 220, 'hop'], ['🚀', 56, 66, 130, 'bob']], t: 'A friendly alien waved hello from planet Zoom.' },
+    { bg: 'linear-gradient(#0b1240,#24307a)', stars: true, a: [['🌍', 56, 56, 340, 'spin'], ['🚀', 54, 40, 150, 'flyhome']], t: 'Then Little Rocket flew home to tell everyone about the trip.' },
+  ] },
+  { id: 'sea', title: 'Under the Sea', em: '🐠', c: '#1fb5c9', scenes: [
+    { bg: 'linear-gradient(#3cc7e8,#0b5f8f)', ground: '#f2d49b', a: [['🐠', 50, 46, 180, 'swim'], ['🫧', 30, 70, 70, 'float'], ['🫧', 70, 76, 60, 'float']], t: 'Deep in the blue sea lived a little fish named Finn.' },
+    { bg: 'linear-gradient(#36bde0,#0a5786)', ground: '#f2d49b', a: [['🌿', 16, 72, 200, 'sway'], ['🌿', 84, 70, 220, 'sway'], ['🐚', 60, 84, 90, 'bob'], ['🐠', 46, 44, 160, 'swim']], t: 'Finn swam past swaying seaweed and shiny shells.' },
+    { bg: 'linear-gradient(#2fb2d8,#084f7c)', ground: '#f2d49b', a: [['🐙', 60, 58, 280, 'wiggle'], ['🐠', 28, 40, 140, 'bob']], t: 'Octopus waved all eight arms. Hello, Finn!' },
+    { bg: 'linear-gradient(#1f8fc0,#063f66)', a: [['🐋', 50, 50, 360, 'swim'], ['🎵', 70, 30, 80, 'float'], ['🎵', 30, 34, 70, 'float']], t: 'A big gentle whale sang a deep, slow song.' },
+    { bg: 'linear-gradient(#36bde0,#0a5786)', ground: '#f2d49b', a: [['🐢', 50, 58, 260, 'swim'], ['🐠', 50, 40, 110, 'swim']], t: 'A kind turtle gave Finn a ride across the reef.' },
+    { bg: 'linear-gradient(#0e4d7a,#04253f)', ground: '#d8bb83', a: [['🪸', 40, 72, 220, ''], ['🪸', 66, 74, 180, ''], ['🐠', 52, 60, 120, 'bob'], ['💤', 62, 44, 80, 'float']], t: 'Then Finn snuggled into the coral to sleep. Goodnight, sea!' },
+  ] },
+  { id: 'rain', title: 'Rainy Day Puddles', em: '☔', c: '#8a6cf0', scenes: [
+    { bg: 'linear-gradient(#8a97ad,#c4cbd8)', ground: '#6a9a5a', rain: true, a: [['🌧️', 30, 18, 180, 'bob'], ['🌧️', 70, 16, 160, 'bob'], ['🏠', 50, 62, 260, '']], t: 'Drip, drop! It started to rain.' },
+    { bg: 'linear-gradient(#8a97ad,#c4cbd8)', ground: '#6a9a5a', rain: true, a: [['🦆', 44, 64, 220, 'bob'], ['☂️', 60, 46, 160, 'wiggle'], ['🥾', 40, 82, 80, '']], t: 'Duck put on yellow boots and took an umbrella.' },
+    { bg: 'linear-gradient(#8a97ad,#c4cbd8)', ground: '#6a9a5a', rain: true, a: [['🦆', 50, 58, 220, 'hop'], ['💦', 40, 82, 120, 'grow'], ['💦', 60, 82, 120, 'grow']], t: 'Splash! Duck jumped in the biggest puddle.' },
+    { bg: 'linear-gradient(#8a97ad,#c4cbd8)', ground: '#6a9a5a', rain: true, a: [['🐸', 34, 64, 200, 'hop'], ['🦆', 64, 62, 200, 'hop'], ['💦', 50, 84, 120, 'grow']], t: 'Frog jumped in too. Splish, splash, splosh!' },
+    { bg: 'linear-gradient(#8fd3ff,#e0f5ff)', ground: '#7bd66b', a: [['🌈', 50, 34, 520, 'grow'], ['☀️', 84, 16, 140, 'spin'], ['🐸', 38, 68, 170, 'bob'], ['🦆', 62, 66, 180, 'bob']], t: 'Then the sun came out and painted a rainbow.' },
+  ] },
+];
+const GAMES = [
+  { id: 'memory', title: 'Memory Match', em: '🃏', c: '#6c8cff' },
+  { id: 'mole', title: 'Bop the Mole', em: '🐹', c: '#c98a4b' },
+  { id: 'ttt', title: 'Panda Tic-Tac-Toe', em: '⭕', c: '#ff6f91' },
+  { id: 'count', title: 'Count It!', em: '🔢', c: '#3fc3a0' },
+  { id: 'simon', title: 'Copy the Colors', em: '🎨', c: '#ffb020' },
+];
+const FUN = [
+  { id: 'draw', title: 'Drawing Pad', em: '🖍️', c: '#ff8a3d' },
+  { id: 'animals', title: 'Animal Sounds', em: '🐮', c: '#7bc043' },
+  { id: 'abc', title: 'ABC', em: '🔤', c: '#9b6cff' },
+  { id: 'piano', title: 'Piano', em: '🎹', c: '#ef5b8a' },
+];
+function addStars(n) { S.stars += n; save(); $$('.stars').forEach((s) => (s.textContent = `⭐ ${S.stars}`)); }
+function kidHead(title, isHome) {
+  return `<header class="k-head">${isHome ? '' : '<button class="btn f" data-k="back" onclick="back()">‹ Back</button>'}<div class="panda">${PANDA}</div><h1>${esc(title)}</h1><span class="stars">⭐ ${S.stars}</span></header>`;
+}
+function confetti() {
+  const st = $('#stage'), colors = ['#ff5d8f', '#ffd34d', '#3dc1ff', '#5ad16b', '#ff8a3d', '#9b6cff'];
+  for (let i = 0; i < 70; i++) {
+    const c = document.createElement('i');
+    c.className = 'confetti';
+    c.style.left = rand(1920) + 'px'; c.style.background = colors[i % colors.length];
+    c.style.animationDelay = (Math.random() * 0.6) + 's';
+    st.append(c); setTimeout(() => c.remove(), 3200);
+  }
+}
+function celebrate(stars, msg, again) {
+  confetti(); cheer(); addStars(stars); say(`${msg} You got ${stars} stars!`);
+  modal({
+    cls: 'kids-modal', title: 'Great job!',
+    html: `<div class="big-stars">${'⭐'.repeat(stars)}</div><p>${esc(msg)}</p>`,
+    buttons: [{ label: 'Play again', primary: true, action: again }, { label: 'Back to Panda Kids', action: back }],
+  });
+}
+SCREENS.kids = {
+  render(el) {
+    el.classList.add('kids');
+    const tile = (kind, x) => `<button class="k-tile f" data-k="${kind}-${x.id}" data-kind="${kind}" data-id="${x.id}" style="--c:${x.c}"><span class="em">${x.em}</span><span class="nm">${esc(x.title)}</span></button>`;
+    el.innerHTML = kidHead('Panda Kids', true) + `<div class="k-scroll">
+      <section class="k-sec"><h2>Movies</h2><div class="k-row">${MOVIES.map((m) => tile('movie', m)).join('')}</div></section>
+      <section class="k-sec"><h2>Games</h2><div class="k-row">${GAMES.map((g) => tile('game', g)).join('')}</div></section>
+      <section class="k-sec"><h2>Fun things</h2><div class="k-row">${FUN.map((g) => tile('fun', g)).join('')}</div></section></div>`;
+    $$('.k-tile', el).forEach((b) => {
+      b.onclick = () => go(b.dataset.kind === 'movie' ? 'movie' : 'kgame', { id: b.dataset.id });
+      b.addEventListener('focus', () => b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    });
+    if (!stack.some((s) => s.name === 'kids' && s.greeted)) { stack[stack.length - 1].greeted = true; later(() => say('Hi! I am Panda. What do you want to do?'), 400); }
+  },
+};
+
+/* ---- Movie player ---- */
+SCREENS.movie = {
+  render(el, { id }) {
+    el.classList.add('kids');
+    const mv = MOVIES.find((m) => m.id === id);
+    let i = 0, playing = true, narrate = true, timer = null;
+    el.innerHTML = kidHead(mv.title) + `<div class="k-body"><div class="player" id="pl">
+      <div class="mv-stage" id="mvs"></div>
+      <div class="mv-caption" id="cap"></div>
+      <div class="mv-bar"><button class="btn f" id="prev" data-k="prev">⏮ Back</button><button class="btn primary f autofocus" id="play" data-k="play">⏸ Pause</button><button class="btn f" id="next" data-k="next">Next ⏭</button>
+        <div class="mv-prog">${mv.scenes.map(() => '<i><b></b></i>').join('')}</div><button class="btn f" id="narr" data-k="narr">🔊 Voice on</button></div></div></div>`;
+    const stageEl = $('#mvs', el), cap = $('#cap', el), segs = $$('.mv-prog i', el), pl = $('#pl', el);
+    const dur = (sc) => Math.max(6, sc.t.split(' ').length * 0.5 + 2.5);
+    const scene = (n) => {
+      clearTimeout(timer);
+      i = n; const sc = mv.scenes[i];
+      let extra = '';
+      if (sc.rain) extra += Array.from({ length: 70 }, () => `<i class="drop" style="left:${rand(100)}%;animation-duration:${0.6 + Math.random() * 0.6}s;animation-delay:-${Math.random()}s"></i>`).join('');
+      if (sc.stars) extra += Array.from({ length: 45 }, () => `<i class="twinkle-dot" style="left:${rand(100)}%;top:${rand(70)}%;animation-delay:-${Math.random() * 2}s"></i>`).join('');
+      stageEl.style.background = sc.bg;
+      stageEl.innerHTML = `<div class="mv-scene">${extra}${sc.ground ? `<div class="mv-ground" style="background:${sc.ground}"></div>` : ''}
+        ${sc.a.map(([e, x, y, size, anim], k) => `<div class="actor" style="left:${x}%;top:${y}%;font-size:${size}px"><span class="${anim ? 'a-' + anim : ''}" style="animation-delay:${anim === 'float' ? k * 0.7 : 0}s">${e}</span></div>`).join('')}</div>`;
+      cap.textContent = sc.t;
+      segs.forEach((s, k) => { s.classList.toggle('done', k < i); const b = s.querySelector('b'); b.style.animation = 'none'; b.style.width = k < i ? '100%' : '0'; });
+      const b = segs[i].querySelector('b'); void b.offsetWidth; b.style.width = ''; b.style.animation = `grow-w ${dur(sc)}s linear forwards`;
+      if (narrate) say(sc.t);
+      if (playing) schedule();
+    };
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(() => (i < mv.scenes.length - 1 ? scene(i + 1) : end()), dur(mv.scenes[i]) * 1000); };
+    const end = () => {
+      clearTimeout(timer); segs.forEach((s) => s.classList.add('done'));
+      stageEl.insertAdjacentHTML('beforeend', `<div class="the-end"><h2>The End</h2><div style="display:flex;gap:24px"><button class="btn primary f" id="again">Watch again</button><button class="btn f" id="more">More movies</button></div></div>`);
+      if (narrate) say('The end!');
+      cheer(); addStars(1);
+      $('#again', el).onclick = () => scene(0); $('#more', el).onclick = back; $('#again', el).focus();
+    };
+    const setPlay = (v) => {
+      playing = v; pl.classList.toggle('paused', !v); $('#play', el).textContent = v ? '⏸ Pause' : '▶ Play';
+      if (v) schedule(); else { clearTimeout(timer); hush(); }
+    };
+    $('#play', el).onclick = () => { if (stageEl.querySelector('.the-end')) scene(0); else setPlay(!playing); };
+    $('#prev', el).onclick = () => scene(Math.max(0, i - 1));
+    $('#next', el).onclick = () => (i < mv.scenes.length - 1 ? scene(i + 1) : end());
+    $('#narr', el).onclick = () => { narrate = !narrate; $('#narr', el).textContent = narrate ? '🔊 Voice on' : '🔇 Voice off'; if (!narrate) hush(); else say(mv.scenes[i].t); };
+    scr.cleanup.push(() => clearTimeout(timer));
+    scene(0);
+  },
+};
+document.head.insertAdjacentHTML('beforeend', '<style>@keyframes grow-w{from{width:0}to{width:100%}}</style>');
+
+/* ---- Games and fun ---- */
+SCREENS.kgame = {
+  render(el, { id }) {
+    el.classList.add('kids');
+    const meta = [...GAMES, ...FUN].find((g) => g.id === id);
+    el.innerHTML = kidHead(meta.title) + '<div class="k-body" id="kb"></div>';
+    KID_APPS[id]($('#kb', el), () => { const t = stack[stack.length - 1]; t.focus = null; show(); });
+  },
+};
+const KID_APPS = {
+  memory(box, restart) {
+    const pool = shuffle(['🐶', '🐱', '🐼', '🦊', '🐸', '🐵', '🦁', '🐷', '🐨', '🐯']).slice(0, 6);
+    const cards = shuffle([...pool, ...pool]);
+    let open = [], done = 0, moves = 0, lock = false;
+    box.innerHTML = `<div class="k-center"><div class="k-msg" id="msg">Find the matching pairs!</div><div class="g-grid" style="grid-template-columns:repeat(6,200px)">${cards.map((c, i) =>
+      `<button class="card f${i === 0 ? ' autofocus' : ''}" data-i="${i}" aria-label="Card ${i + 1}"><span class="q">?</span></button>`).join('')}</div></div>`;
+    const btns = $$('.card', box), msg = $('#msg', box);
+    btns.forEach((b) => (b.onclick = () => {
+      if (lock || b.classList.contains('open') || b.classList.contains('done')) return;
+      b.classList.add('open'); b.textContent = cards[+b.dataset.i]; tone(600 + open.length * 200, 0.12, 'triangle');
+      open.push(b);
+      if (open.length < 2) return;
+      moves++;
+      const [x, y] = open;
+      if (x.textContent === y.textContent) {
+        later(() => { x.classList.add('done'); y.classList.add('done'); open = []; done++; cheer(); msg.textContent = `Yes! ${done} of 6 pairs`;
+          if (done === 6) later(() => celebrate(moves <= 10 ? 3 : moves <= 15 ? 2 : 1, `You found all the pairs in ${moves} tries!`, restart), 500);
+        }, 250);
+      } else {
+        lock = true; msg.textContent = 'Not a match. Try again!';
+        later(() => { [x, y].forEach((c) => { c.classList.remove('open'); c.innerHTML = '<span class="q">?</span>'; }); open = []; lock = false; }, 950);
+      }
+    }));
+    btns[0].focus();
+  },
+
+  mole(box, restart) {
+    let score = 0, left = 30, mole = -1, running = false, speed = 1100, hideT = null;
+    box.innerHTML = `<div class="k-center"><div class="k-msg" id="msg">Bop the mole when it pops up!</div>
+      <div class="g-grid" style="grid-template-columns:repeat(3,250px)">${Array.from({ length: 9 }, (_, i) => `<button class="hole f" data-i="${i}" aria-label="Hole ${i + 1}"><span>🐹</span></button>`).join('')}</div>
+      <button class="btn primary f autofocus" id="go">Start</button></div>`;
+    const holes = $$('.hole', box), msg = $('#msg', box), goBtn = $('#go', box);
+    const pop = () => {
+      if (!running) return;
+      holes.forEach((h) => h.classList.remove('up'));
+      let n; do { n = rand(9); } while (n === mole);
+      mole = n; holes[n].classList.add('up'); $('span', holes[n]).textContent = '🐹';
+      clearTimeout(hideT); hideT = later(pop, speed); speed = Math.max(600, speed - 15);
+    };
+    holes.forEach((h, i) => (h.onclick = () => {
+      if (!running) return;
+      if (i === mole) { score++; tone(900, 0.1, 'square', 0.1); $('span', h).textContent = '💥'; mole = -1; later(() => h.classList.remove('up'), 150); clearTimeout(hideT); hideT = later(pop, 350); }
+      else boop();
+      msg.textContent = `Score: ${score} · ${left} s left`;
+    }));
+    goBtn.onclick = () => {
+      running = true; goBtn.hidden = true; holes[4].focus(); pop();
+      const t = every(() => {
+        left--; msg.textContent = `Score: ${score} · ${left} s left`;
+        if (left <= 0) { clearInterval(t); running = false; clearTimeout(hideT); holes.forEach((h) => h.classList.remove('up')); celebrate(score >= 16 ? 3 : score >= 8 ? 2 : 1, `You bopped ${score} moles!`, restart); }
+      }, 1000);
+    };
+    goBtn.focus();
+  },
+
+  ttt(box, restart) {
+    const b = Array(9).fill(''), ME = '⭐', PANDA_P = '🐼';
+    const lines = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+    let over = false, busy = false;
+    box.innerHTML = `<div class="k-center"><div class="k-msg" id="msg">You are ⭐. Panda is 🐼. You go first!</div>
+      <div class="g-grid" style="grid-template-columns:repeat(3,220px)">${b.map((_, i) => `<button class="cell f${i === 4 ? ' autofocus' : ''}" data-i="${i}" aria-label="Square ${i + 1}"></button>`).join('')}</div>
+      <button class="btn f" id="again">New game</button></div>`;
+    const cells = $$('.cell', box), msg = $('#msg', box);
+    const winner = () => { for (const l of lines) { const [x, y, z] = l; if (b[x] && b[x] === b[y] && b[x] === b[z]) return l; } return null; };
+    const finish = () => {
+      const w = winner();
+      if (w) { over = true; w.forEach((i) => cells[i].classList.add('win')); if (b[w[0]] === ME) later(() => celebrate(3, 'You beat Panda!', restart), 600); else { msg.textContent = 'Panda wins this time! Try again?'; boop(); } return true; }
+      if (b.every(Boolean)) { over = true; msg.textContent = "It's a tie! Good game."; addStars(1); return true; }
+      return false;
+    };
+    const pick = () => {
+      const free = b.map((v, i) => (v ? null : i)).filter((v) => v !== null);
+      const find = (who) => { for (const l of lines) { const vals = l.map((i) => b[i]); if (vals.filter((v) => v === who).length === 2 && vals.includes('')) return l[vals.indexOf('')]; } return null; };
+      if (Math.random() < 0.3) return free[rand(free.length)];
+      return find(PANDA_P) ?? find(ME) ?? (b[4] ? null : 4) ?? free[rand(free.length)];
+    };
+    cells.forEach((c, i) => (c.onclick = () => {
+      if (over || busy || b[i]) return;
+      b[i] = ME; c.textContent = ME; tone(700, 0.12, 'triangle');
+      if (finish()) return;
+      busy = true; msg.textContent = 'Panda is thinking…';
+      later(() => { const p = pick(); b[p] = PANDA_P; cells[p].textContent = PANDA_P; tone(400, 0.12, 'triangle'); busy = false; if (!finish()) msg.textContent = 'Your turn!'; }, 700);
+    }));
+    $('#again', box).onclick = restart;
+    cells[4].focus();
+  },
+
+  count(box, restart) {
+    const things = ['🍎', '🐥', '⭐', '🎈', '🍓', '🐟', '🌸', '🚗', '🍪', '🐞'];
+    const colors = ['#ff6f91', '#3fc3a0', '#6c8cff'];
+    let round = 0, right = 0, firstTry = true;
+    box.innerHTML = '<div class="k-center" id="cc"></div>';
+    const cc = $('#cc', box);
+    const next = () => {
+      if (round === 8) { celebrate(right >= 7 ? 3 : right >= 4 ? 2 : 1, `You counted ${right} of 8 right on the first try!`, restart); return; }
+      round++; firstTry = true;
+      const n = 1 + rand(9), e = things[rand(things.length)];
+      const opts = shuffle([...new Set([n, ...shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((x) => x !== n)).slice(0, 2)])]);
+      cc.innerHTML = `<div class="k-msg">How many? <span style="opacity:.6">(${round} of 8)</span></div><div class="count-box">${Array(n).fill(`<span>${e}</span>`).join('')}</div>
+        <div style="display:flex;gap:40px">${opts.map((o, k) => `<button class="choice f${k === 0 ? ' autofocus' : ''}" data-n="${o}" style="background:${colors[k]}">${o}</button>`).join('')}</div>`;
+      say('How many do you see?');
+      $$('.choice', cc).forEach((b) => (b.onclick = () => {
+        if (+b.dataset.n === n) { b.classList.add('yes'); cheer(); say(`Yes! ${n}!`); if (firstTry) right++; later(next, 1100); }
+        else { firstTry = false; b.classList.add('no'); boop(); say('Try again!'); }
+      }));
+      $('.choice', cc).focus();
+    };
+    next();
+  },
+
+  simon(box, restart) {
+    const pads = [['#ff4d6d', 330], ['#3d8bff', 440], ['#38c172', 554], ['#ffc233', 659]];
+    let seq = [], pos = 0, input = false;
+    box.innerHTML = `<div class="k-center"><div class="k-msg" id="msg">Watch the colors, then copy them!</div>
+      <div class="pads">${pads.map(([c], i) => `<button class="pad f" data-i="${i}" style="background:${c}" aria-label="Color ${i + 1}"></button>`).join('')}</div>
+      <button class="btn primary f autofocus" id="go">Start</button></div>`;
+    const els = $$('.pad', box), msg = $('#msg', box), goBtn = $('#go', box);
+    const flash = (i, ms = 420) => { els[i].classList.add('lit'); tone(pads[i][1], ms / 1000, 'triangle', 0.2); later(() => els[i].classList.remove('lit'), ms); };
+    const play = () => {
+      input = false; pos = 0; msg.textContent = `Watch… (level ${seq.length})`;
+      seq.forEach((p, k) => later(() => flash(p), 700 + k * 650));
+      later(() => { input = true; msg.textContent = 'Your turn!'; els[0].focus(); }, 700 + seq.length * 650);
+    };
+    els.forEach((e, i) => (e.onclick = () => {
+      if (!input) return;
+      flash(i, 260);
+      if (i !== seq[pos]) {
+        input = false; boop(); const lvl = seq.length - 1;
+        later(() => (lvl > 0 ? celebrate(lvl >= 7 ? 3 : lvl >= 4 ? 2 : 1, `You remembered ${lvl} colors in a row!`, restart) : (msg.textContent = 'Oops! Press Start to try again.', goBtn.hidden = false, goBtn.focus())), 500);
+        return;
+      }
+      pos++;
+      if (pos === seq.length) { input = false; msg.textContent = 'Yes!'; seq.push(rand(4)); later(play, 900); }
+    }));
+    goBtn.onclick = () => { goBtn.hidden = true; seq = [rand(4)]; play(); };
+    goBtn.focus();
+  },
+
+  draw(box) {
+    const colors = ['#20304f', '#ff4d6d', '#ff8a3d', '#ffc233', '#38c172', '#3d8bff', '#9b6cff', '#8b5a2b', '#ffffff'];
+    const sizes = [[8, 'S'], [18, 'M'], [36, 'L']];
+    let color = colors[1], size = 18, cx = 880, cy = 350, pen = false;
+    box.innerHTML = `<div class="palette">${colors.map((c, i) => `<button class="swatch f${i === 1 ? ' sel' : ''}" data-c="${c}" style="background:${c}" aria-label="Color ${i + 1}"></button>`).join('')}
+      ${sizes.map(([s, n]) => `<button class="btn f${s === 18 ? ' primary' : ''}" data-s="${s}">${n}</button>`).join('')}
+      <button class="btn f" id="clear">🧽 Clear</button><span style="font-size:26px;font-weight:700;margin-left:12px">Select the paper, move with arrows, press OK to draw</span></div>
+      <div class="canvas-wrap"><canvas id="draw" class="f autofocus" width="1760" height="700" tabindex="0" aria-label="Drawing paper"></canvas><div class="cursor" id="cur"></div></div>`;
+    const cv = $('#draw', box), ctx = cv.getContext('2d'), cur = $('#cur', box);
+    ctx.lineCap = ctx.lineJoin = 'round';
+    const place = () => { cur.style.left = cx + 'px'; cur.style.top = cy + 'px'; cur.style.width = cur.style.height = Math.max(24, size) + 'px'; cur.style.margin = `-${Math.max(24, size) / 2}px 0 0 -${Math.max(24, size) / 2}px`; cur.classList.toggle('down', pen); cur.style.borderColor = color === '#ffffff' ? '#20304f' : color; };
+    const line = (x0, y0, x1, y1) => { ctx.strokeStyle = color; ctx.lineWidth = size; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); };
+    $$('[data-c]', box).forEach((b) => (b.onclick = () => { color = b.dataset.c; $$('[data-c]', box).forEach((x) => x.classList.toggle('sel', x === b)); place(); }));
+    $$('[data-s]', box).forEach((b) => (b.onclick = () => { size = +b.dataset.s; $$('[data-s]', box).forEach((x) => x.classList.toggle('primary', x === b)); place(); }));
+    $('#clear', box).onclick = () => { ctx.clearRect(0, 0, cv.width, cv.height); tone(300, 0.2, 'sine'); };
+    const pt = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * (cv.width / r.width), (e.clientY - r.top) * (cv.height / r.height)]; };
+    let drag = null;
+    cv.addEventListener('pointerdown', (e) => { cv.focus(); drag = pt(e); [cx, cy] = drag; line(cx, cy, cx + 0.1, cy); cv.setPointerCapture(e.pointerId); place(); });
+    cv.addEventListener('pointermove', (e) => { const p = pt(e); if (drag) { line(drag[0], drag[1], p[0], p[1]); drag = p; } [cx, cy] = p; place(); });
+    cv.addEventListener('pointerup', () => (drag = null));
+    scr.keys = (e) => {
+      if (document.activeElement !== cv) return false;
+      const d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+      if (d) {
+        if (e.key === 'ArrowUp' && cy <= 4 && !pen) return false;
+        const sp = e.repeat ? 26 : 12, nx = Math.max(0, Math.min(cv.width, cx + d[0] * sp)), ny = Math.max(0, Math.min(cv.height, cy + d[1] * sp));
+        if (pen) line(cx, cy, nx, ny);
+        cx = nx; cy = ny; place(); return true;
+      }
+      if (e.key === 'Enter' || e.key === ' ') { pen = !pen; if (pen) line(cx, cy, cx + 0.1, cy); place(); return true; }
+      return false;
+    };
+    place(); cv.focus();
+  },
+
+  animals(box) {
+    const list = [['🐮', 'cow', 'moo'], ['🐶', 'dog', 'woof woof'], ['🐱', 'cat', 'meow'], ['🦆', 'duck', 'quack quack'], ['🐷', 'pig', 'oink oink'], ['🐑', 'sheep', 'baa'],
+      ['🦁', 'lion', 'roar'], ['🐴', 'horse', 'neigh'], ['🐸', 'frog', 'ribbit'], ['🦉', 'owl', 'hoo hoo'], ['🐓', 'rooster', 'cock-a-doodle-doo'], ['🐝', 'bee', 'buzz']];
+    box.innerHTML = `<div class="animals">${list.map(([e, n], i) => `<button class="animal f${i === 0 ? ' autofocus' : ''}" data-i="${i}"><span class="em">${e}</span><span class="nm">${n[0].toUpperCase() + n.slice(1)}</span></button>`).join('')}</div>`;
+    $$('.animal', box).forEach((b) => (b.onclick = () => {
+      const [, n, s] = list[+b.dataset.i];
+      $$('.bubble', box).forEach((x) => x.remove());
+      b.classList.remove('talk'); void b.offsetWidth; b.classList.add('talk');
+      b.insertAdjacentHTML('beforeend', `<span class="bubble">${esc(s[0].toUpperCase() + s.slice(1))}!</span>`);
+      say(`The ${n} says ${s}!`);
+    }));
+    $('.animal', box).focus();
+  },
+
+  abc(box) {
+    const W = { A: ['🍎', 'Apple'], B: ['⚽', 'Ball'], C: ['🐱', 'Cat'], D: ['🐶', 'Dog'], E: ['🥚', 'Egg'], F: ['🐟', 'Fish'], G: ['🍇', 'Grapes'], H: ['🎩', 'Hat'], I: ['🍦', 'Ice cream'], J: ['🧃', 'Juice'], K: ['🪁', 'Kite'], L: ['🦁', 'Lion'], M: ['🌙', 'Moon'],
+      N: ['👃', 'Nose'], O: ['🍊', 'Orange'], P: ['🐼', 'Panda'], Q: ['👸', 'Queen'], R: ['🌈', 'Rainbow'], S: ['☀️', 'Sun'], T: ['🌳', 'Tree'], U: ['☂️', 'Umbrella'], V: ['🎻', 'Violin'], W: ['🐋', 'Whale'], X: ['🎶', 'Xylophone'], Y: ['🪀', 'Yo-yo'], Z: ['🦓', 'Zebra'] };
+    const colors = ['#ff6f91', '#ff8a3d', '#ffb020', '#3fc3a0', '#3d8bff', '#9b6cff', '#ef5b8a'];
+    box.innerHTML = `<div class="abc"><div class="letters">${Object.keys(W).map((l, i) => `<button class="letter f${i === 0 ? ' autofocus' : ''}" data-l="${l}" style="background:${colors[i % colors.length]}">${l}</button>`).join('')}</div>
+      <div class="abc-card" id="card"><div class="L">A</div><div class="E">🍎</div><div class="W">Apple</div></div></div>`;
+    const card = $('#card', box);
+    const showL = (l, speak) => { const [e, w] = W[l]; card.innerHTML = `<div class="L">${l}${l.toLowerCase()}</div><div class="E">${e}</div><div class="W">${w}</div>`; if (speak) say(`${l} is for ${w}`); };
+    $$('.letter', box).forEach((b) => { b.onclick = () => showL(b.dataset.l, true); b.addEventListener('focus', () => showL(b.dataset.l, false)); });
+    $('.letter', box).focus();
+  },
+
+  piano(box) {
+    const keys = [['C', 'Do', 262, '#ff4d6d'], ['D', 'Re', 294, '#ff8a3d'], ['E', 'Mi', 330, '#ffc233'], ['F', 'Fa', 349, '#38c172'], ['G', 'So', 392, '#1fb5c9'], ['A', 'La', 440, '#3d8bff'], ['B', 'Ti', 494, '#9b6cff'], ['C', 'Do', 523, '#ef5b8a']];
+    const twinkle = [0, 0, 4, 4, 5, 5, 4, -1, 3, 3, 2, 2, 1, 1, 0];
+    box.innerHTML = `<div class="k-center"><div class="k-msg">Press a key, or number keys 1–8 on the remote</div>
+      <div class="piano">${keys.map(([n, s, , c], i) => `<button class="key f${i === 0 ? ' autofocus' : ''}" data-i="${i}" style="background:${c}"><b>${n}</b><small>${s} · ${i + 1}</small></button>`).join('')}</div>
+      <button class="btn primary f" id="song">▶ Play "Twinkle Twinkle"</button></div>`;
+    const els = $$('.key', box);
+    const hit = (i) => { tone(keys[i][2], 0.6, 'triangle', 0.25); tone(keys[i][2] * 2, 0.4, 'sine', 0.05); els[i].classList.add('hit'); setTimeout(() => els[i].classList.remove('hit'), 180); };
+    els.forEach((b, i) => (b.onclick = () => hit(i)));
+    $('#song', box).onclick = () => twinkle.forEach((n, k) => n >= 0 && later(() => hit(n), k * 450));
+    scr.keys = (e) => { if (/^[1-8]$/.test(e.key)) { hit(+e.key - 1); return true; } return false; };
+    els[0].focus();
+  },
+};
+
+/* =========================================================
+   Boot
+   ========================================================= */
+function hideBoot() { $('#boot').classList.add('out'); }
+function showBoot() { const b = $('#boot'); b.classList.remove('out'); setTimeout(hideBoot, 1800); }
+stack.push({ name: 'home', params: {} });
+show();
+showBoot();
+setInterval(tick, 250);
+</script>
+</body>
+</html>
