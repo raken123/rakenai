@@ -91,6 +91,7 @@ src/billing.js         Stripe checkout, portal and webhooks
 src/db.js              JSON-file storage
 web/                   index.html (landing), login.html, app.html (+ JS/CSS)
 desktop/               Electron app and DMG packaging
+youtube-extension/     Premium+ for YouTube, a separate Chrome extension (see its README)
 scripts/set-plan.js    owner tool to set an account's plan
 test/                  node:test suites (the Claude API is stubbed locally)
 ```

@@ -1,0 +1,460 @@
+/* ---------- Premium logo ---------- */
+
+.ytp-plus-premium-word {
+  display: none;
+}
+
+html.ytp-plus-premium ytd-topbar-logo-renderer #logo {
+  display: inline-flex !important;
+  align-items: center;
+  width: auto !important;
+}
+
+html.ytp-plus-premium ytd-topbar-logo-renderer #country-code {
+  display: none !important;
+}
+
+html.ytp-plus-premium .ytp-plus-premium-word {
+  display: inline-block;
+  /* #logo-icon has 16px of padding on its right; pull the word in next to it. */
+  margin-left: -10px;
+  font-family: 'YouTube Sans', 'Roboto', 'Arial', sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1;
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  white-space: nowrap;
+  transform: translateY(2px);
+}
+
+/* ---------- Hide ads ---------- */
+
+html.ytp-plus-noads #masthead-ad,
+html.ytp-plus-noads #player-ads,
+html.ytp-plus-noads ytd-ad-slot-renderer,
+html.ytp-plus-noads ytd-rich-item-renderer:has(ytd-ad-slot-renderer),
+html.ytp-plus-noads ytd-in-feed-ad-layout-renderer,
+html.ytp-plus-noads ytd-banner-promo-renderer,
+html.ytp-plus-noads ytd-promoted-sparkles-web-renderer,
+html.ytp-plus-noads ytd-promoted-video-renderer,
+html.ytp-plus-noads ytd-compact-promoted-video-renderer,
+html.ytp-plus-noads ytd-display-ad-renderer,
+html.ytp-plus-noads ytd-search-pyv-renderer,
+html.ytp-plus-noads ytd-player-legacy-desktop-watch-ads-renderer,
+html.ytp-plus-noads ytd-engagement-panel-section-list-renderer[target-id='engagement-panel-ads'],
+html.ytp-plus-noads .ytp-ad-overlay-container,
+html.ytp-plus-noads .ytp-ad-overlay-slot,
+html.ytp-plus-noads .ytp-featured-product {
+  display: none !important;
+}
+
+/* While an ad is being skipped, don't flash it on screen. */
+html.ytp-plus-adskip #movie_player.ad-showing video {
+  opacity: 0 !important;
+}
+
+/* ---------- Hide "Get Premium" nags (you already have it) ---------- */
+
+html.ytp-plus-noupsell ytd-mealbar-promo-renderer,
+html.ytp-plus-noupsell yt-mealbar-promo-renderer,
+html.ytp-plus-noupsell ytd-statement-banner-renderer,
+html.ytp-plus-noupsell ytd-brand-video-singleton-renderer,
+html.ytp-plus-noupsell ytd-guide-entry-renderer:has(a[href^='/premium']),
+html.ytp-plus-noupsell ytd-guide-entry-renderer:has(a[href*='youtube.com/premium']),
+html.ytp-plus-noupsell tp-yt-paper-dialog:has(ytd-mealbar-promo-renderer) {
+  display: none !important;
+}
+
+/* ---------- Hide Shorts ---------- */
+
+html.ytp-plus-noshorts ytd-reel-shelf-renderer,
+html.ytp-plus-noshorts ytd-rich-shelf-renderer[is-shorts],
+html.ytp-plus-noshorts ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html.ytp-plus-noshorts ytd-guide-entry-renderer:has(a[title='Shorts']),
+html.ytp-plus-noshorts ytd-mini-guide-entry-renderer[aria-label='Shorts'],
+html.ytp-plus-noshorts ytd-rich-item-renderer:has(a[href^='/shorts/']),
+html.ytp-plus-noshorts ytd-video-renderer:has(a[href^='/shorts/']),
+html.ytp-plus-noshorts ytd-grid-video-renderer:has(a[href^='/shorts/']),
+html.ytp-plus-noshorts grid-shelf-view-model:has(a[href^='/shorts/']) {
+  display: none !important;
+}
+
+/* ---------- Accent color ---------- */
+
+html.ytp-plus-accent .ytp-play-progress,
+html.ytp-plus-accent .ytp-swatch-background-color,
+html.ytp-plus-accent .ytp-scrubber-button,
+html.ytp-plus-accent ytd-thumbnail-overlay-resume-playback-renderer #progress,
+html.ytp-plus-accent .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment,
+html.ytp-plus-accent .ytProgressBarLineProgressBarPlayed {
+  background: var(--ytp-plus-accent) !important;
+}
+
+html.ytp-plus-accent #logo-icon [fill='#FF0033'],
+html.ytp-plus-accent #logo-icon [fill='#FF0000'],
+html.ytp-plus-accent #logo-icon [fill='#f03'],
+html.ytp-plus-accent #logo-icon [fill='red'] {
+  fill: var(--ytp-plus-accent) !important;
+}
+
+/* ---------- Player buttons ---------- */
+
+.ytp-plus-speed-btn,
+.ytp-plus-buttons {
+  display: none !important;
+}
+
+html.ytp-plus-speed .ytp-plus-speed-btn {
+  display: inline-block !important;
+  width: auto !important;
+  min-width: 44px;
+  padding: 0 6px !important;
+  font-family: 'Roboto', 'Arial', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  vertical-align: top;
+}
+
+.ytp-plus-speed-btn.ytp-plus-fast {
+  color: var(--ytp-plus-accent, #a259ff);
+  text-shadow: 0 0 8px var(--ytp-plus-accent, #a259ff);
+}
+
+html.ytp-plus-buttons-on .ytp-plus-buttons {
+  display: inline-flex !important;
+  height: 100%;
+  vertical-align: top;
+}
+
+.ytp-plus-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytp-plus-btn .ytp-plus-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.ytp-plus-btn[aria-pressed='true'] {
+  color: var(--ytp-plus-accent, #a259ff);
+}
+
+/* Small screens: the player bar is crowded, keep only the speed button. */
+.ytp-small-mode .ytp-plus-buttons {
+  display: none !important;
+}
+
+.ytp-plus-menu {
+  position: absolute;
+  right: 12px;
+  bottom: 60px;
+  z-index: 70;
+  max-height: calc(100% - 80px);
+  overflow-y: auto;
+  min-width: 190px;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: rgba(28, 28, 28, 0.92);
+  backdrop-filter: blur(8px);
+  font-family: 'Roboto', 'Arial', sans-serif;
+  color: #eee;
+  text-shadow: none;
+}
+
+.ytp-plus-menu-title {
+  padding: 6px 16px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #aaa;
+}
+
+.ytp-plus-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ytp-plus-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ytp-plus-menu-item[aria-checked='true'] {
+  color: var(--ytp-plus-accent, #a259ff);
+  font-weight: 700;
+}
+
+.ytp-plus-menu-item[aria-checked='true']::before {
+  content: '✓';
+  margin-right: -8px;
+}
+
+.ytp-plus-menu-note {
+  font-size: 12px;
+  color: #999;
+}
+
+/* ---------- Party mode ---------- */
+
+@keyframes ytp-plus-party {
+  0% {
+    filter: hue-rotate(0deg) saturate(1.6);
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.025) rotate(-0.6deg);
+  }
+  50% {
+    filter: hue-rotate(180deg) saturate(1.6);
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.025) rotate(0.6deg);
+  }
+  100% {
+    filter: hue-rotate(360deg) saturate(1.6);
+    transform: scale(1);
+  }
+}
+
+#movie_player.ytp-plus-party video {
+  animation: ytp-plus-party 1.6s linear infinite;
+}
+
+/* ---------- Toast ---------- */
+
+.ytp-plus-toast {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 80;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.85);
+  color: #fff;
+  font: 500 14px 'Roboto', 'Arial', sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -6px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+body > .ytp-plus-toast {
+  position: fixed;
+  z-index: 10000;
+}
+
+.ytp-plus-toast.ytp-plus-show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---------- GIFs ---------- */
+
+.ytp-plus-gif-btn {
+  display: none;
+}
+
+html.ytp-plus-gifs .ytp-plus-gif-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  height: 26px;
+  margin: 0 6px;
+  padding: 0 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 6px;
+  background: none;
+  color: var(--yt-spec-text-secondary, #606060);
+  font: 800 11px/1 'Roboto', 'Arial', sans-serif;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+html.ytp-plus-gifs .ytp-plus-gif-btn:hover {
+  color: var(--yt-spec-text-primary, #0f0f0f);
+}
+
+.ytp-plus-gif-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+
+.ytp-plus-gif {
+  display: block;
+  max-width: min(260px, 100%);
+  max-height: 200px;
+  border-radius: 8px;
+}
+
+yt-live-chat-text-message-renderer .ytp-plus-gif {
+  max-width: 180px;
+  max-height: 120px;
+}
+
+.ytp-plus-gif-picker {
+  position: fixed;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 14px;
+  background: #212121;
+  color: #f1f1f1;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+.ytp-plus-gif-head {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ytp-plus-gif-search {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid #3f3f3f;
+  border-radius: 999px;
+  background: #121212;
+  color: inherit;
+  font: 14px 'Roboto', 'Arial', sans-serif;
+  outline: none;
+}
+
+.ytp-plus-gif-search:focus {
+  border-color: var(--ytp-plus-accent, #a259ff);
+}
+
+.ytp-plus-gif-close {
+  width: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #aaa;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.ytp-plus-gif-close:hover {
+  background: #3f3f3f;
+  color: #fff;
+}
+
+.ytp-plus-gif-label {
+  margin: 0 2px 4px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.ytp-plus-gif-strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+}
+
+.ytp-plus-gif-strip .ytp-plus-gif-tile {
+  flex: 0 0 72px;
+  height: 56px;
+}
+
+.ytp-plus-gif-status {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.ytp-plus-gif-status:not(:empty) {
+  margin: 0 2px 6px;
+}
+
+.ytp-plus-gif-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 84px;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.ytp-plus-gif-tile {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: #333;
+  cursor: pointer;
+}
+
+.ytp-plus-gif-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ytp-plus-gif-tile:hover,
+.ytp-plus-gif-tile:focus-visible {
+  outline: 2px solid var(--ytp-plus-accent, #a259ff);
+  outline-offset: -2px;
+}
+
+.ytp-plus-gif-wide {
+  grid-column: 1 / -1;
+  grid-row: span 2;
+}
+
+.ytp-plus-gif-wide img {
+  object-fit: contain;
+}
+
+.ytp-plus-gif-wide span {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ytp-plus-accent, #a259ff);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ytp-plus-gif-empty {
+  grid-column: 1 / -1;
+  padding: 24px 12px;
+  font-size: 13px;
+  color: #aaa;
+  text-align: center;
+}
+
+.ytp-plus-gif-foot {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #777;
+  text-align: right;
+}

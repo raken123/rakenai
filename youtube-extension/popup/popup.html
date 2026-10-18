@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Premium+</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon48.png" alt="" width="36" height="36" />
+      <div>
+        <h1>Premium<span>+</span></h1>
+        <p>Your just-for-fun YouTube Premium</p>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="Stats">
+      <div><b id="stat-ads">0</b><span>ads skipped</span></div>
+      <div><b id="stat-sponsors">0</b><span>sponsors skipped</span></div>
+      <div><b id="stat-time">0s</b><span>time saved</span></div>
+      <div><b id="stat-gifs">0</b><span>GIFs sent</span></div>
+    </section>
+
+    <section>
+      <h2>Look</h2>
+      <label class="row">
+        <span>Premium logo<small>Swap the YouTube logo for a Premium one</small></span>
+        <input type="checkbox" data-key="premiumLogo" />
+      </label>
+      <label class="row sub">
+        <span>Logo text</span>
+        <input type="text" data-key="logoText" maxlength="24" placeholder="Premium" />
+      </label>
+      <label class="row">
+        <span>Custom accent color<small>Progress bar, logo and buttons</small></span>
+        <input type="checkbox" data-key="accentOn" />
+      </label>
+      <label class="row sub">
+        <span>Color</span>
+        <input type="color" data-key="accent" />
+      </label>
+    </section>
+
+    <section>
+      <h2>No ads</h2>
+      <label class="row">
+        <span>Skip video ads<small>Mutes, fast-forwards and skips them</small></span>
+        <input type="checkbox" data-key="adSkip" />
+      </label>
+      <label class="row">
+        <span>Hide ad banners<small>Feed, sidebar and search ads</small></span>
+        <input type="checkbox" data-key="hideAds" />
+      </label>
+      <label class="row">
+        <span>Skip sponsor segments<small>Uses the community SponsorBlock database</small></span>
+        <input type="checkbox" data-key="sponsorBlock" />
+      </label>
+      <label class="row">
+        <span>Hide "Get Premium" nags<small>You already have Premium+</small></span>
+        <input type="checkbox" data-key="hideUpsells" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Player</h2>
+      <label class="row">
+        <span>Speed menu up to 16x<small>3x, 4x, 8x for no reason, 16x for chaos</small></span>
+        <input type="checkbox" data-key="speedMenu" />
+      </label>
+      <label class="row sub">
+        <span>Keep my speed between videos</span>
+        <input type="checkbox" data-key="rememberSpeed" />
+      </label>
+      <label class="row">
+        <span>Extra buttons<small>Screenshot, loop, picture-in-picture, party mode</small></span>
+        <input type="checkbox" data-key="playerButtons" />
+      </label>
+      <div class="row slider">
+        <span>Volume boost <output id="boost-value">100%</output></span>
+        <input type="range" data-key="volumeBoost" min="1" max="6" step="0.25" aria-label="Volume boost" />
+      </div>
+    </section>
+
+    <section>
+      <h2>Social</h2>
+      <label class="row">
+        <span>GIFs in comments &amp; chat<small>Send GIFs and see GIFs others sent</small></span>
+        <input type="checkbox" data-key="gifs" />
+      </label>
+      <label class="row sub column">
+        <span>GIPHY API key <small>Optional: search every GIF on GIPHY. Free at developers.giphy.com</small></span>
+        <input type="password" data-key="giphyKey" placeholder="Paste your key" autocomplete="off" spellcheck="false" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Feed</h2>
+      <label class="row">
+        <span>Hide Shorts</span>
+        <input type="checkbox" data-key="hideShorts" />
+      </label>
+    </section>
+
+    <footer>Not affiliated with YouTube or Google. Just for fun.</footer>
+
+    <script src="../defaults.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
