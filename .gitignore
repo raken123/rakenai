@@ -4,3 +4,7 @@ data/
 desktop/app/
 desktop/dist/
 desktop/config.json
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties

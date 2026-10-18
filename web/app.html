@@ -2,57 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Raken</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app">
     <aside class="sidebar" id="sidebar">
-      <a class="logo" href="/"><span>Raken</span></a>
-      <button id="new-chat" class="ghost">+ New chat</button>
+      <a class="logo" href="/"><img src="icon.svg" alt="">Raken</a>
+      <button id="new-chat" class="ghost">New chat</button>
       <h2>Tools</h2>
-      <div id="tools"></div>
-      <h2>Model</h2>
-      <div id="models"></div>
-      <h2>History</h2>
+      <nav id="tools"></nav>
+      <h2 id="history-heading">Recent</h2>
       <div class="history" id="history"></div>
-      <div class="account-box">
-        <div class="balance"><span id="plan-name">—</span><button class="ghost" id="open-plans">Plans</button></div>
-        <div class="balance"><span>Credits</span><strong id="credits">0</strong></div>
-        <div class="balance ultra"><span>Ultra Credits</span><strong id="ultra">0</strong></div>
-        <div class="balance muted"><span id="email"></span><a href="#" id="logout">Log out</a></div>
+      <div class="account">
+        <div class="row"><span>Weekly usage</span><span id="usage-percent">0%</span></div>
+        <div class="meter" id="meter"><div></div></div>
+        <div class="row muted"><span id="usage-reset"></span></div>
+        <div class="row"><span>Credits</span><strong id="credits">0</strong></div>
+        <div class="row ultra-text"><span>Ultra Credits</span><strong id="ultra">0</strong></div>
+        <button id="open-plans" class="ghost">Plans and billing</button>
+        <div class="row muted"><span id="email"></span><a href="#" id="logout">Log out</a></div>
       </div>
     </aside>
 
     <section class="main">
       <div class="topbar">
-        <button class="ghost menu-toggle" id="menu">☰</button>
+        <button class="ghost small menu-toggle" id="menu" aria-label="Menu">☰</button>
         <strong id="title">New chat</strong>
-        <span class="muted" id="model-label"></span>
+        <select id="model" aria-label="Model"></select>
       </div>
-      <div id="messages" class="messages"></div>
+      <div id="messages" class="messages"><div class="thread" id="thread"></div></div>
       <form id="composer" class="composer">
-        <textarea id="prompt" rows="2" placeholder="Message Raken…" required></textarea>
-        <div class="composer-row">
-          <label class="ultra-toggle"><input type="checkbox" id="use-ultra"> Use Ultra Credits (much faster)</label>
-          <span id="quote" class="quote"></span>
-          <button type="submit" id="send">Send</button>
+        <div class="composer-box">
+          <textarea id="prompt" rows="1" placeholder="Message Raken" required></textarea>
+          <div class="composer-row">
+            <label class="ultra-toggle" title="Runs on the priority path for top quality and speed"><input type="checkbox" id="use-ultra"> Use Ultra Credits</label>
+            <span id="hint" class="hint">Enter to send · Shift+Enter for a new line</span>
+            <button type="submit" id="send">Send</button>
+          </div>
         </div>
       </form>
     </section>
   </div>
 
   <dialog id="plans-dialog">
-    <h2>Plans</h2>
-    <p class="muted" id="billing-note"></p>
+    <div class="dialog-head">
+      <h2>Plans and billing</h2>
+      <form method="dialog"><button class="ghost small">Close</button></form>
+    </div>
+    <p class="demo-banner">Demo payments: checkout works, but no money is charged and no card is needed.</p>
+    <h3>Plans</h3>
     <div class="grid" id="plans"></div>
-    <p class="error" id="plans-error"></p>
-    <form method="dialog" style="display:flex;gap:10px;justify-content:flex-end">
-      <button type="button" class="ghost" id="manage-billing" hidden>Manage billing</button>
-      <button class="ghost">Close</button>
-    </form>
+    <h3>Credits</h3>
+    <p class="muted">Keep going after your weekly usage runs out. 1 Credit = 1 usage unit. Credits never expire.</p>
+    <div class="grid" id="credit-packs"></div>
+    <h3>Ultra Credits</h3>
+    <p class="muted">For big, important tasks: Ultra Credits run them on the priority path with the strongest settings, in much higher quality and much faster. They don't use your weekly usage.</p>
+    <div class="grid" id="ultra-packs"></div>
+    <h3>Billing history</h3>
+    <div class="orders" id="orders"></div>
+  </dialog>
+
+  <dialog id="checkout-dialog">
+    <h2>Checkout</h2>
+    <p class="demo-banner">Demo checkout: nothing is charged.</p>
+    <div class="receipt">
+      <div class="row"><span id="checkout-item"></span><strong id="checkout-price"></strong></div>
+      <div class="row muted"><span>Charged today</span><span>$0.00 (demo)</span></div>
+    </div>
+    <p class="error" id="checkout-error"></p>
+    <div class="row">
+      <button type="button" class="ghost" id="checkout-cancel">Cancel</button>
+      <button type="button" id="checkout-confirm">Confirm</button>
+    </div>
   </dialog>
 
   <script type="module" src="app.js"></script>

@@ -1,36 +1,52 @@
-// Shared plan card used by the landing page and the in-app plans dialog.
-export function planCard(catalog, id, plan, { current = false, action }) {
+// Shared plan and pack cards used by the landing page and the in-app billing dialog.
+import { el } from './files.js';
+
+const RANK = ['free', 'plus', 'pro', 'ultra'];
+
+export function planFeatures(catalog, id) {
+  const plan = catalog.plans[id];
   const { models, tools } = catalog;
-  const card = document.createElement('div');
-  card.className = `card plan${id === 'plus' ? ' featured' : ''}${current ? ' current' : ''}`;
-
-  const allowance = plan.dailyCredits
-    ? `${plan.dailyCredits} credits every day you log in`
-    : `${plan.monthlyCredits.toLocaleString()} credits / month`;
-  const items = [
-    allowance,
-    `${plan.monthlyUltraCredits} Ultra Credits / month`,
-    `Models: ${plan.models.map((m) => models[m].name).join(', ')}`,
+  const limit = plan.limitMultiplier === 1 ? 'Standard weekly usage' : `${plan.limitMultiplier}x the Free weekly usage`;
+  return [
+    limit,
     `Tools: ${plan.tools.map((t) => tools[t].name).join(', ')}`,
+    `Models: ${plan.models.map((m) => models[m].name).join(', ')}`,
   ];
+}
 
-  const h3 = document.createElement('h3');
-  h3.textContent = plan.name;
-  const price = document.createElement('div');
-  price.className = 'price';
-  price.textContent = plan.priceUsd ? `$${plan.priceUsd}/mo` : 'Free';
-  const ul = document.createElement('ul');
-  for (const text of items) ul.append(Object.assign(document.createElement('li'), { textContent: text }));
-  card.append(h3, price, ul);
-
-  if (action) {
-    const el = document.createElement(action.href ? 'a' : 'button');
-    el.className = 'button';
-    el.textContent = action.label;
-    if (action.href) el.href = action.href;
-    if (action.onClick) el.addEventListener('click', action.onClick);
-    if (action.disabled) el.disabled = true;
-    card.append(el);
-  }
+export function planCard(catalog, id, { current = false, action } = {}) {
+  const plan = catalog.plans[id];
+  const card = el('div', { className: `card plan${current ? ' current' : ''}` },
+    el('span', { className: 'tag', textContent: current ? 'Your plan' : ' ' }),
+    el('h3', { textContent: plan.name }),
+    el('div', { className: 'price' }, plan.priceUsd ? `$${plan.priceUsd}` : '$0', el('small', { textContent: ' / month' })),
+    el('ul', {}, ...planFeatures(catalog, id).map((text) => el('li', { textContent: text }))),
+  );
+  if (action) card.append(actionButton(action));
   return card;
+}
+
+export function packCard(catalog, id, { action } = {}) {
+  const pack = catalog.packs[id];
+  const label = pack.kind === 'credits' ? 'Credits' : 'Ultra Credits';
+  return el('div', { className: 'card pack' },
+    el('div', {}, el('strong', { textContent: `${pack.amount.toLocaleString()} ${label}` }), el('div', { className: 'muted', textContent: `$${pack.priceUsd}` })),
+    action && actionButton(action),
+  );
+}
+
+function actionButton({ label, href, onClick, disabled, ghost }) {
+  const node = el(href ? 'a' : 'button', { className: `button${ghost ? ' ghost' : ''}`, textContent: label });
+  if (href) node.href = href;
+  else node.type = 'button';
+  if (onClick) node.addEventListener('click', onClick);
+  if (disabled) node.disabled = true;
+  return node;
+}
+
+export const isUpgrade = (from, to) => RANK.indexOf(to) > RANK.indexOf(from);
+
+// The cheapest plan that unlocks a tool or model.
+export function planFor(catalog, { tool, model }) {
+  return RANK.find((id) => (tool ? catalog.plans[id].tools.includes(tool) : catalog.plans[id].models.includes(model)));
 }

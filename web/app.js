@@ -1,9 +1,33 @@
 import { renderMarkdown } from './markdown.js';
-import { meshPreview } from './mesh.js';
-import { planCard } from './plans.js';
+import { el, filesPanel, moviePanel } from './files.js';
+import { isUpgrade, packCard, planCard, planFor } from './plans.js';
 
 const $ = (id) => document.getElementById(id);
-const state = { catalog: null, me: null, tool: 'chat', modelId: 'raken-standard', conversationId: null, busy: false };
+const state = { catalog: null, me: null, tool: 'chat', models: {}, conversationId: null, busy: false };
+
+const WELCOME = {
+  chat: {
+    title: 'How can I help you today?',
+    text: 'Ask anything, write and edit text, plan, learn or brainstorm.',
+    examples: ['Explain how vaccines work in simple terms', 'Write a polite email asking for a deadline extension', 'Give me 5 dinner ideas with chicken and rice'],
+  },
+  code: {
+    title: 'What should we build?',
+    text: 'Raken Code writes complete projects in any language, from Python to Brainfuck. Web apps get a live preview.',
+    examples: ['Make a snake game in one HTML file', 'Write a Python script that renames photos by date', 'Write Hello World in Brainfuck'],
+  },
+  work: {
+    title: 'What do you need done?',
+    text: 'Raken Work makes documents, reports, slide decks, spreadsheets and emails.',
+    examples: ['Make a 6-slide pitch deck for a dog-walking business', 'Create a monthly budget spreadsheet for a family of four', 'Write a one-page project plan for launching a website'],
+  },
+  vidful: {
+    title: 'What is your movie about?',
+    text: 'Describe a scene and Raken 1 Vidful makes a short animated movie.',
+    examples: ['A paper boat sails through a rainy city at night', 'A rocket launches at sunrise and flies into space', 'A fox walks through a snowy forest'],
+  },
+};
+const PLACEHOLDER = { chat: 'Message Raken', code: 'Describe what to build or change', work: 'Describe the document, deck or sheet you need', vidful: 'Describe your movie' };
 
 async function api(method, path, body) {
   const res = await fetch(path, {
@@ -13,117 +37,119 @@ async function api(method, path, body) {
   });
   if (res.status === 401) location.href = 'login.html';
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? data.error);
+  if (!res.ok) throw Object.assign(new Error(data.message ?? data.error), { code: data.error });
   return data;
-}
-
-function el(tag, props = {}, ...children) {
-  const node = Object.assign(document.createElement(tag), props);
-  node.append(...children.filter((c) => c != null));
-  return node;
 }
 
 const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 const plan = () => state.catalog.plans[state.me.plan];
+const modelName = (id) => state.catalog.models[id]?.name ?? id;
 
 function renderAccount() {
-  $('plan-name').textContent = state.me.planName;
-  $('credits').textContent = state.me.credits.toLocaleString();
-  $('ultra').textContent = state.me.ultraCredits.toLocaleString();
-  $('email').textContent = state.me.email;
-  $('use-ultra').disabled = state.me.ultraCredits === 0;
+  const me = state.me;
+  $('open-plans').textContent = me.plan === 'ultra' ? 'Ultra plan · Billing' : `${me.planName} plan · Upgrade`;
+  $('usage-percent').textContent = `${me.usedPercent}%`;
+  $('meter').firstElementChild.style.width = `${me.usedPercent}%`;
+  $('meter').classList.toggle('full', me.usedPercent >= 100);
+  const reset = new Date(me.resetsAt);
+  $('usage-reset').textContent = `Resets ${reset.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`;
+  $('credits').textContent = me.credits.toLocaleString();
+  $('ultra').textContent = me.ultraCredits.toLocaleString();
+  $('email').textContent = me.email;
+  $('use-ultra').disabled = me.ultraCredits === 0;
   if ($('use-ultra').disabled) $('use-ultra').checked = false;
 }
 
-function optionButton({ active, locked, label, description, onSelect }) {
-  return el('button', {
-    type: 'button',
-    className: `option${active ? ' active' : ''}${locked ? ' locked' : ''}`,
-    title: locked ? 'Upgrade to unlock' : '',
-    onclick: () => (locked ? openPlans() : onSelect()),
-  }, `${locked ? '🔒 ' : ''}${label}`, el('small', {}, description));
+function renderTools() {
+  const { tools } = state.catalog;
+  $('tools').replaceChildren(...Object.entries(tools).map(([id, tool]) => {
+    const locked = !plan().tools.includes(id);
+    return el('button', {
+      type: 'button',
+      className: `nav-item${id === state.tool ? ' active' : ''}`,
+      title: tool.description,
+      onclick: () => (locked ? openPlans() : selectTool(id)),
+    }, el('span', { textContent: tool.name }), locked && el('span', { className: 'lock', textContent: `${state.catalog.plans[planFor(state.catalog, { tool: id })].name}` }));
+  }));
 }
 
-function renderPickers() {
-  const { tools, models, toolModels } = state.catalog;
-  $('tools').replaceChildren(...Object.entries(tools).map(([id, tool]) => optionButton({
-    active: id === state.tool,
-    locked: !plan().tools.includes(id),
-    label: tool.name,
-    description: tool.description,
-    onSelect: () => selectTool(id),
-  })));
-  $('models').replaceChildren(...toolModels[state.tool].map((id) => optionButton({
-    active: id === state.modelId,
-    locked: !plan().models.includes(id),
-    label: models[id].name,
-    description: models[id].description,
-    onSelect: () => selectModel(id),
-  })));
-  $('model-label').textContent = `${tools[state.tool].name} · ${models[state.modelId]?.name ?? ''}`;
-  const placeholders = { chat: 'Message Raken…', work: 'Describe the files you want…', vidful: 'Describe your short movie…' };
-  $('prompt').placeholder = placeholders[state.tool];
+function renderModels() {
+  const ids = state.catalog.toolModels[state.tool];
+  $('model').replaceChildren(...ids.map((id) => {
+    const locked = !plan().models.includes(id);
+    const needs = state.catalog.plans[planFor(state.catalog, { model: id })].name;
+    return el('option', { value: id, disabled: locked, selected: id === state.models[state.tool], textContent: `${modelName(id)}${locked ? ` (${needs} plan)` : ''}` });
+  }));
+  $('model').title = state.catalog.models[state.models[state.tool]]?.description ?? '';
 }
 
-function selectTool(id) {
+function pickModel(tool) {
+  const allowed = state.catalog.toolModels[tool].filter((m) => plan().models.includes(m));
+  if (!allowed.includes(state.models[tool])) state.models[tool] = allowed[0];
+}
+
+function selectTool(id, { keepConversation = false } = {}) {
   state.tool = id;
-  const allowed = state.catalog.toolModels[id].filter((m) => plan().models.includes(m));
-  if (!allowed.includes(state.modelId)) state.modelId = allowed[0];
-  renderPickers();
-  updateQuote();
-}
-
-function selectModel(id) {
-  state.modelId = id;
-  renderPickers();
-  updateQuote();
+  pickModel(id);
+  renderTools();
+  renderModels();
+  $('prompt').placeholder = PLACEHOLDER[id];
+  if (!keepConversation) newChat();
+  $('sidebar').classList.remove('open');
 }
 
 async function renderHistory() {
-  const list = await api('GET', '/api/conversations');
-  $('history').replaceChildren(...list.map((c) => el('button', {
-    type: 'button',
-    className: c.id === state.conversationId ? 'active' : '',
-    textContent: c.title,
-    title: c.title,
-    onclick: () => openConversation(c.id),
-  })));
+  const list = (await api('GET', '/api/conversations')).filter((c) => c.tool === state.tool);
+  $('history-heading').textContent = `Recent in ${state.catalog.tools[state.tool].name}`;
+  $('history').replaceChildren(...(list.length
+    ? list.map((c) => el('button', {
+      type: 'button',
+      className: `nav-item${c.id === state.conversationId ? ' active' : ''}`,
+      title: c.title,
+      onclick: () => openConversation(c.id),
+    }, el('span', { textContent: c.title })))
+    : [el('div', { className: 'empty-note', textContent: 'Nothing yet.' })]));
 }
 
-function showEmpty() {
-  $('messages').replaceChildren(el('div', { className: 'empty' },
-    el('h2', {}, 'What can Raken do for you?'),
-    el('p', {}, 'Chat with Raken, ask Work agents to make files, or make images, short movies and 3D models.'),
+function showWelcome() {
+  const w = WELCOME[state.tool];
+  $('thread').replaceChildren(el('div', { className: 'welcome' },
+    el('h2', { textContent: w.title }),
+    el('p', { textContent: w.text }),
+    el('div', { className: 'actions' }, ...w.examples.map((text) => el('button', {
+      type: 'button',
+      className: 'ghost small',
+      textContent: text,
+      onclick: () => { $('prompt').value = text; autosize(); $('prompt').focus(); },
+    }))),
   ));
 }
 
 function newChat() {
   state.conversationId = null;
-  $('title').textContent = 'New chat';
-  showEmpty();
+  $('title').textContent = state.tool === 'chat' ? 'New chat' : `New ${state.catalog.tools[state.tool].name} task`;
+  showWelcome();
   renderHistory();
 }
 
 async function openConversation(id) {
   const convo = await api('GET', `/api/conversation?id=${encodeURIComponent(id)}`);
+  if (convo.tool !== state.tool) selectTool(convo.tool, { keepConversation: true });
   state.conversationId = id;
   $('title').textContent = convo.title;
-  $('messages').replaceChildren();
+  $('thread').replaceChildren();
   for (const m of convo.messages) addMessage(m);
-  if (!convo.messages.length) showEmpty();
+  if (!convo.messages.length) showWelcome();
   renderHistory();
   $('sidebar').classList.remove('open');
 }
 
-function fileUrl(file) {
-  const type = file.name.endsWith('.svg') ? 'image/svg+xml' : 'text/plain';
-  return URL.createObjectURL(new Blob([file.content], { type }));
-}
-
 function costLabel(m) {
-  const model = state.catalog.models[m.model]?.name ?? m.model;
-  const cost = m.charged.ultraCredits ? `${m.charged.ultraCredits} Ultra (fast)` : plural(m.charged.credits, 'credit');
-  return `${model} · ${cost}`;
+  const c = m.charged;
+  if (!c) return modelName(m.model);
+  if (c.ultraCredits) return `${modelName(m.model)} · Ultra priority · ${plural(c.ultraCredits, 'Ultra Credit')}`;
+  const credits = c.credits ? ` · ${plural(c.credits, 'Credit')}` : '';
+  return `${modelName(m.model)} · ${c.units} usage units${credits}`;
 }
 
 function fillAiMessage(node, m) {
@@ -131,41 +157,54 @@ function fillAiMessage(node, m) {
   const body = el('div');
   body.innerHTML = renderMarkdown(m.text ?? '');
   node.append(body);
-
   const files = m.files ?? [];
-  if (m.preview?.type === 'mesh' && files[0]) node.append(meshPreview(files[0].content));
-  else if (m.preview && files[0]) {
-    // Shown through <img>, so any script inside the SVG never runs.
-    node.append(el('img', { src: fileUrl(files[0]), alt: m.text }));
-  }
-  if (files.length) {
-    node.append(el('div', { className: 'files' },
-      ...files.map((f) => el('a', { href: fileUrl(f), download: f.name, textContent: `⬇ ${f.name}` }))));
-  }
-  if (m.charged) node.append(el('span', { className: 'meta', textContent: costLabel(m) }));
+  if (m.preview === 'movie' && files[0]) node.append(moviePanel(files[0], m.text));
+  else if (files.length) node.append(filesPanel(files));
+  node.append(el('span', { className: 'meta', textContent: costLabel(m) }));
 }
 
 function addMessage(m) {
-  $('messages').querySelector('.empty')?.remove();
+  $('thread').querySelector('.welcome')?.remove();
   const node = el('div', { className: `msg ${m.role}` });
   if (m.role === 'ai') fillAiMessage(node, m);
   else node.textContent = m.text;
-  $('messages').append(node);
+  $('thread').append(node);
   node.scrollIntoView({ block: 'end' });
   return node;
 }
 
-let quoteTimer;
-function updateQuote() {
-  clearTimeout(quoteTimer);
-  quoteTimer = setTimeout(async () => {
-    const prompt = $('prompt').value;
-    if (!prompt.trim() || !state.modelId) return void ($('quote').textContent = '');
-    const q = await api('POST', '/api/quote', { modelId: state.modelId, prompt });
-    $('quote').textContent = $('use-ultra').checked
-      ? `Costs ${plural(q.ultraCredits, 'Ultra Credit')}`
-      : `Costs ${plural(q.credits, 'credit')}`;
-  }, 200);
+// Shows an error with the action that fixes it, if there is one.
+function showError(node, message, code) {
+  node.className = 'msg ai';
+  const fix = {
+    limit_reached: ['Buy Credits', openPlans],
+    no_ultra: ['Buy Ultra Credits', openPlans],
+    tool_locked: ['See plans', openPlans],
+    model_locked: ['See plans', openPlans],
+  }[code];
+  node.replaceChildren(el('div', { className: 'notice' },
+    el('span', { className: 'error', textContent: message }),
+    fix && el('div', { className: 'actions' }, el('button', { type: 'button', className: 'small', textContent: fix[0], onclick: fix[1] })),
+  ));
+}
+
+// Raken thinks the task is huge: offer Ultra Credits, or run it normally anyway.
+function suggestUltra(node, data, job) {
+  const has = state.me.ultraCredits > 0;
+  node.replaceChildren(el('div', { className: 'notice ultra' },
+    el('strong', { textContent: 'This is a big task' }),
+    el('span', { textContent: `${data.reason} A skilled person would need ${data.estimate}.` }),
+    el('span', { textContent: 'On normal usage it can take a long time and use a lot of your weekly usage. Ultra Credits run it on the priority path in much higher quality and much faster.' }),
+    el('div', { className: 'actions' },
+      el('button', {
+        type: 'button',
+        className: 'small',
+        textContent: has ? `Use Ultra Credits (you have ${state.me.ultraCredits})` : 'Buy Ultra Credits',
+        onclick: () => (has ? send({ ...job, ultra: true, reuse: node }) : openPlans()),
+      }),
+      el('button', { type: 'button', className: 'small ghost', textContent: 'Run normally anyway', onclick: () => send({ ...job, skipCheck: true, reuse: node }) }),
+    ),
+  ));
 }
 
 // Reads the server-sent events stream from POST /api/run.
@@ -187,56 +226,50 @@ async function* events(res) {
   }
 }
 
-async function send(e) {
-  e.preventDefault();
-  const prompt = $('prompt').value.trim();
+async function send({ prompt, ultra = false, skipCheck = false, reuse = null }) {
   if (!prompt || state.busy) return;
   state.busy = true;
   $('send').disabled = true;
-  const ultra = $('use-ultra').checked;
-  addMessage({ role: 'user', text: prompt });
-  $('prompt').value = '';
-  $('quote').textContent = '';
-  const reply = addMessage({ role: 'ai', text: '' });
-  reply.append(el('span', { className: 'working', textContent: 'Raken is thinking…' }));
+  const job = { prompt };
+  if (!reuse) addMessage({ role: 'user', text: prompt });
+  const reply = reuse ?? addMessage({ role: 'ai', text: '' });
+  reply.className = 'msg ai';
+  const working = el('span', { className: 'working', textContent: ultra ? 'Starting on the Ultra priority path…' : 'Thinking…' });
+  reply.replaceChildren(working);
 
   try {
     const res = await fetch('/api/run', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ tool: state.tool, modelId: state.modelId, prompt, ultra, conversationId: state.conversationId }),
+      body: JSON.stringify({ tool: state.tool, modelId: state.models[state.tool], prompt, ultra, skipCheck, conversationId: state.conversationId }),
     });
     if (!res.headers.get('content-type')?.startsWith('text/event-stream')) {
       const data = await res.json();
-      throw new Error(data.message ?? data.error);
+      throw Object.assign(new Error(data.message ?? data.error), { code: data.error });
     }
     let text = '';
     for await (const { event, data } of events(res)) {
-      if (event === 'start') {
-        state.me = data.account;
-        renderAccount();
-        if (!state.conversationId) {
-          state.conversationId = data.conversationId;
-          $('title').textContent = data.title;
-          renderHistory();
-        }
+      if (data.account) state.me = { ...state.me, ...data.account };
+      if (event === 'start' && !state.conversationId) {
+        state.conversationId = data.conversationId;
+        $('title').textContent = data.title;
+        renderHistory();
       } else if (event === 'status') {
-        reply.querySelector('.working').textContent = data.text;
+        working.textContent = data.text;
       } else if (event === 'delta') {
         text += data.text;
         reply.innerHTML = renderMarkdown(text);
         reply.scrollIntoView({ block: 'end' });
+      } else if (event === 'suggest_ultra') {
+        suggestUltra(reply, data, job);
       } else if (event === 'done') {
         fillAiMessage(reply, data.message);
-        state.me = data.account;
       } else if (event === 'error') {
-        state.me = data.account;
-        throw new Error(data.message);
+        throw Object.assign(new Error(data.message), { code: data.code });
       }
     }
   } catch (err) {
-    reply.className = 'msg error';
-    reply.textContent = err.message;
+    showError(reply, err.message, err.code);
   } finally {
     state.busy = false;
     $('send').disabled = false;
@@ -244,74 +277,98 @@ async function send(e) {
   }
 }
 
-function openPlans() {
-  const billing = state.catalog.billing;
-  $('plans-error').textContent = '';
-  $('billing-note').textContent = billing
-    ? 'Paid plans renew monthly. Cancel any time from Manage billing.'
-    : 'Payments are not set up on this server yet.';
-  $('manage-billing').hidden = !state.me.hasSubscription;
-  $('plans').replaceChildren(...Object.entries(state.catalog.plans).map(([id, p]) => {
-    const current = id === state.me.plan;
-    let action;
-    if (current) action = { label: 'Current plan', disabled: true };
-    else if (id === 'free') action = state.me.hasSubscription ? { label: 'Cancel in billing', onClick: manageBilling } : null;
-    else if (state.me.hasSubscription) action = { label: `Switch in billing`, onClick: manageBilling };
-    else action = { label: `Upgrade to ${p.name}`, disabled: !billing, onClick: () => checkout(id) };
-    return planCard(state.catalog, id, p, { current, action });
+// --- Plans and billing (demo payments) ---
+
+async function openPlans() {
+  const { catalog, me } = state;
+  $('plans').replaceChildren(...Object.keys(catalog.plans).map((id) => {
+    const current = id === me.plan;
+    const label = current ? 'Current plan' : isUpgrade(me.plan, id) ? `Upgrade to ${catalog.plans[id].name}` : `Switch to ${catalog.plans[id].name}`;
+    return planCard(catalog, id, {
+      current,
+      action: { label, disabled: current, ghost: !isUpgrade(me.plan, id), onClick: () => checkout('plan', id) },
+    });
   }));
-  $('plans-dialog').showModal();
+  const packs = (kind) => Object.keys(catalog.packs).filter((id) => catalog.packs[id].kind === kind)
+    .map((id) => packCard(catalog, id, { action: { label: 'Buy', onClick: () => checkout('pack', id) } }));
+  $('credit-packs').replaceChildren(...packs('credits'));
+  $('ultra-packs').replaceChildren(...packs('ultraCredits'));
+  if (!$('plans-dialog').open) $('plans-dialog').showModal();
+  $('sidebar').classList.remove('open');
+  const orders = await api('GET', '/api/billing/history');
+  $('orders').replaceChildren(...(orders.length
+    ? orders.map((o) => el('div', { className: 'row' },
+      el('span', { textContent: `${new Date(o.at).toLocaleDateString()} · ${o.item}` }),
+      el('span', { className: 'muted', textContent: `$${o.priceUsd}${o.period ? '/mo' : ''} (demo)` })))
+    : [el('span', { className: 'muted', textContent: 'No purchases yet.' })]));
 }
 
-async function checkout(planId) {
-  try {
-    location.href = (await api('POST', '/api/billing/checkout', { plan: planId })).url;
-  } catch (err) {
-    $('plans-error').textContent = err.message;
-  }
+function checkout(kind, id) {
+  const { catalog } = state;
+  const item = kind === 'plan'
+    ? { label: `Raken ${catalog.plans[id].name} plan`, price: `$${catalog.plans[id].priceUsd}.00 / month` }
+    : { label: `${catalog.packs[id].amount.toLocaleString()} ${catalog.packs[id].kind === 'credits' ? 'Credits' : 'Ultra Credits'}`, price: `$${catalog.packs[id].priceUsd}.00` };
+  $('checkout-item').textContent = item.label;
+  $('checkout-price').textContent = item.price;
+  $('checkout-error').textContent = '';
+  $('checkout-confirm').textContent = 'Confirm (demo)';
+  $('checkout-confirm').onclick = async () => {
+    $('checkout-confirm').disabled = true;
+    try {
+      const res = kind === 'plan'
+        ? await api('POST', '/api/billing/subscribe', { plan: id })
+        : await api('POST', '/api/billing/buy', { pack: id });
+      state.me = { ...state.me, ...res.account };
+      $('checkout-dialog').close();
+      renderAccount();
+      selectTool(plan().tools.includes(state.tool) ? state.tool : 'chat', { keepConversation: true });
+      await openPlans();
+    } catch (err) {
+      $('checkout-error').textContent = err.message;
+    } finally {
+      $('checkout-confirm').disabled = false;
+    }
+  };
+  $('checkout-dialog').showModal();
 }
 
-async function manageBilling() {
-  try {
-    location.href = (await api('POST', '/api/billing/portal')).url;
-  } catch (err) {
-    $('plans-error').textContent = err.message;
-  }
+function autosize() {
+  const t = $('prompt');
+  t.style.height = 'auto';
+  t.style.height = `${t.scrollHeight}px`;
 }
 
 async function init() {
   [state.catalog, state.me] = await Promise.all([api('GET', '/api/catalog'), api('GET', '/api/me')]);
-  $('composer').addEventListener('submit', send);
-  $('prompt').addEventListener('input', updateQuote);
+  $('composer').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const prompt = $('prompt').value.trim();
+    if (!prompt || state.busy) return;
+    $('prompt').value = '';
+    autosize();
+    send({ prompt, ultra: $('use-ultra').checked });
+  });
+  $('prompt').addEventListener('input', autosize);
   $('prompt').addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing || matchMedia('(pointer: coarse)').matches) return;
     e.preventDefault();
     $('composer').requestSubmit();
   });
-  $('use-ultra').addEventListener('change', updateQuote);
+  $('model').addEventListener('change', () => {
+    state.models[state.tool] = $('model').value;
+    renderModels();
+  });
   $('open-plans').addEventListener('click', openPlans);
-  $('manage-billing').addEventListener('click', manageBilling);
+  $('checkout-cancel').addEventListener('click', () => $('checkout-dialog').close());
   $('new-chat').addEventListener('click', newChat);
   $('menu').addEventListener('click', () => $('sidebar').classList.toggle('open'));
   $('logout').addEventListener('click', async (e) => {
     e.preventDefault();
     await api('POST', '/api/logout');
-    location.href = '/';
+    location.href = 'login.html';
   });
-  selectTool('chat');
   renderAccount();
-  newChat();
-  if (new URLSearchParams(location.search).has('upgraded')) {
-    history.replaceState(null, '', 'app.html');
-    addMessage({ role: 'ai', text: 'Thanks for upgrading! Your new plan unlocks as soon as the payment is confirmed.' });
-    // Stripe confirms the payment by webhook, usually within a few seconds.
-    for (let i = 0; i < 10 && !state.me.hasSubscription; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      state.me = await api('GET', '/api/me');
-    }
-    renderAccount();
-    selectTool(state.tool);
-  }
+  selectTool('chat');
 }
 
 init();

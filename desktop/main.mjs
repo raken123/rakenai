@@ -3,7 +3,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const config = JSON.parse(readFileSync(join(import.meta.dirname, 'config.json'), 'utf8'));
-const IN_APP_HOSTS = new Set(['checkout.stripe.com', 'billing.stripe.com']);
 let appUrl;
 
 // Reads KEY=VALUE lines (e.g. ANTHROPIC_API_KEY=...) without overriding real env vars.
@@ -16,7 +15,8 @@ function loadEnvFile(file) {
 }
 
 // Without a hosted server URL, Raken runs its server inside the app.
-// Its data and settings live in ~/Library/Application Support/Raken.
+// Its data and settings live in the app's user data folder: ~/Library/Application
+// Support/Raken on Mac, %APPDATA%\Raken on Windows.
 async function startLocalServer() {
   const dataDir = app.getPath('userData');
   loadEnvFile(join(dataDir, 'raken.env'));
@@ -34,14 +34,12 @@ function createWindow() {
     minWidth: 760,
     minHeight: 560,
     title: 'Raken',
-    backgroundColor: '#0b0d12',
+    backgroundColor: '#ffffff',
+    autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
   });
 
-  const isInApp = (url) => {
-    const { origin, hostname } = new URL(url);
-    return origin === new URL(appUrl).origin || IN_APP_HOSTS.has(hostname);
-  };
+  const isInApp = (url) => new URL(url).origin === new URL(appUrl).origin;
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };

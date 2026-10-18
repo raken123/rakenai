@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.application'
+}
+
+// RAKEN_SERVER_URL bakes in the address of your hosted Raken. Without it, the
+// app asks for the server address on first launch.
+def serverUrl = (System.getenv('RAKEN_SERVER_URL') ?: '').trim()
+def keystore = System.getenv('RAKEN_KEYSTORE')
+
+android {
+    namespace 'ai.raken.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'ai.raken.app'
+        minSdk 29
+        targetSdk 35
+        versionCode 2
+        versionName '2.0.0'
+        buildConfigField 'String', 'SERVER_URL', "\"${serverUrl}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        // Set RAKEN_KEYSTORE (and the passwords) to sign with your own key, so
+        // updates install over earlier versions. Otherwise the debug key is used.
+        release {
+            if (keystore) {
+                storeFile file(keystore)
+                storePassword System.getenv('RAKEN_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('RAKEN_KEY_ALIAS')
+                keyPassword System.getenv('RAKEN_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig keystore ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
+            outputFileName = "Raken-${variant.versionName}${variant.buildType.name == 'release' ? '' : '-' + variant.buildType.name}.apk"
+        }
+    }
+}

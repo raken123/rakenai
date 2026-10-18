@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { newAccount, refreshAllowance, RakenError } from './credits.js';
+import { newAccount, RakenError } from './usage.js';
 
 const scryptAsync = promisify(scrypt);
 const SESSION_DAYS = 30;
@@ -50,7 +50,7 @@ export function createAuth(db) {
         email,
         passwordHash: await hashPassword(password),
         createdAt: new Date().toISOString(),
-        account: refreshAllowance(newAccount('free')),
+        account: newAccount('free'),
       };
       data.emailIndex[email] = id;
       return { user: data.users[id], token: startSession(id) };
@@ -61,7 +61,6 @@ export function createAuth(db) {
       if (!user || typeof password !== 'string' || !(await verifyPassword(password, user.passwordHash))) {
         throw new RakenError('bad_login', 'Wrong email or password.');
       }
-      refreshAllowance(user.account);
       return { user, token: startSession(user.id) };
     },
 

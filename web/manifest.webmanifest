@@ -1,0 +1,10 @@
+{
+  "name": "Raken",
+  "short_name": "Raken",
+  "description": "Chat, Code, Work and Vidful in one AI app.",
+  "start_url": "/app.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

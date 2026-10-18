@@ -1,7 +1,7 @@
 {
   "name": "rakenai",
   "version": "1.0.0",
-  "description": "Raken: chat, agents and media generation with a credit-based plan system.",
+  "description": "Raken: an AI app with Chat, Code, Work and Vidful, weekly usage, Credits and Ultra Credits.",
   "type": "module",
   "private": true,
   "engines": {
@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
-    "stripe": "^23.0.0",
     "zod": "^4.6.7"
   }
 }

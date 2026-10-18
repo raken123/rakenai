@@ -5,7 +5,7 @@ import { join } from 'node:path';
 // shortly after each change (write to a temp file, then rename, so a crash
 // never leaves a half-written file behind).
 
-const EMPTY = { users: {}, sessions: {}, conversations: {}, emailIndex: {}, customerIndex: {} };
+const EMPTY = { users: {}, sessions: {}, conversations: {}, emailIndex: {} };
 
 export function openDb(dir = process.env.RAKEN_DATA_DIR ?? join(process.cwd(), 'data')) {
   mkdirSync(dir, { recursive: true });

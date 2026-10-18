@@ -2,8 +2,8 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { MODELS, PLANS, TOOLS, TOOL_MODELS } from './src/catalog.js';
-import { RakenError, charge, creditCost, refreshAllowance, refund, ultraCost } from './src/credits.js';
+import { MODELS, PACKS, PLANS, TOOLS, TOOL_MODELS, weeklyUnits } from './src/catalog.js';
+import { RakenError, authorize, newAccount, settle, usageSummary } from './src/usage.js';
 import { openDb } from './src/db.js';
 import { createAuth, SESSION_COOKIE, SESSION_MAX_AGE } from './src/auth.js';
 import { createBilling } from './src/billing.js';
@@ -17,25 +17,28 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json',
 };
 const ERROR_STATUS = {
   unauthorized: 401,
   bad_login: 401,
-  no_credits: 402,
+  limit_reached: 402,
   no_ultra: 402,
   tool_locked: 403,
   model_locked: 403,
   not_found: 404,
   email_taken: 409,
+  same_plan: 409,
   busy: 429,
   ai_not_configured: 503,
-  billing_not_configured: 503,
   ai_error: 502,
 };
+// Code and Work suggest Ultra Credits for tasks this big.
+const ULTRA_SIZES = new Set(['huge']);
 
-export function createApp({ db = openDb(), env = process.env } = {}) {
+export function createApp({ db = openDb() } = {}) {
   const auth = createAuth(db);
-  const billing = createBilling(db, env);
+  const billing = createBilling(db);
   const { data } = db;
   const running = new Set();
 
@@ -44,7 +47,10 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
     res.end(JSON.stringify(body));
   }
 
-  async function readBody(req, limit = 200_000) {
+  async function readJson(req, limit = 200_000) {
+    if (!req.headers['content-type']?.startsWith('application/json')) {
+      throw new RakenError('bad_request', 'Expected a JSON body.');
+    }
     const chunks = [];
     let size = 0;
     for await (const chunk of req) {
@@ -52,14 +58,7 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
       if (size > limit) throw new RakenError('too_large', 'That message is too long.');
       chunks.push(chunk);
     }
-    return Buffer.concat(chunks);
-  }
-
-  async function readJson(req) {
-    if (!req.headers['content-type']?.startsWith('application/json')) {
-      throw new RakenError('bad_request', 'Expected a JSON body.');
-    }
-    const raw = await readBody(req);
+    const raw = Buffer.concat(chunks);
     return raw.length ? JSON.parse(raw) : {};
   }
 
@@ -69,33 +68,23 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
   }
 
   function sessionCookie(req, token, maxAge = SESSION_MAX_AGE) {
-    const secure = env.PUBLIC_URL?.startsWith('https:') || req.headers['x-forwarded-proto'] === 'https';
+    const secure = process.env.PUBLIC_URL?.startsWith('https:') || req.headers['x-forwarded-proto'] === 'https';
     return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure ? '; Secure' : ''}`;
   }
 
   function currentUser(req) {
     const user = auth.userForToken(cookieToken(req));
     if (!user) throw new RakenError('unauthorized', 'Log in first.');
-    refreshAllowance(user.account);
+    // Accounts from the earlier credit system start fresh on the matching plan.
+    if (user.account.usedTokens === undefined) {
+      user.account = newAccount(PLANS[user.account.plan] ? user.account.plan : 'free');
+      db.save();
+    }
     return user;
   }
 
-  function origin(req) {
-    if (env.PUBLIC_URL) return env.PUBLIC_URL.replace(/\/$/, '');
-    const proto = req.headers['x-forwarded-proto'] ?? 'http';
-    return `${proto}://${req.headers.host}`;
-  }
-
   function me(user) {
-    const { plan, credits, ultraCredits } = user.account;
-    return {
-      email: user.email,
-      plan,
-      planName: PLANS[plan].name,
-      credits,
-      ultraCredits,
-      hasSubscription: Boolean(user.subscriptionId),
-    };
+    return { email: user.email, ...usageSummary(user.account) };
   }
 
   function conversation(user, id) {
@@ -108,78 +97,108 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'raken';
   }
 
+  // Keeps agent file paths relative and inside the project.
+  function cleanPath(path) {
+    const parts = String(path).replace(/\\/g, '/').split('/').filter((p) => p && p !== '.' && p !== '..');
+    return parts.join('/') || 'file.txt';
+  }
+
   function sse(res) {
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
     return (event, payload) => res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
   }
 
+  async function runChat(convo, { modelId, ultra, prompt }, send) {
+    convo.history.push({ role: 'user', content: prompt });
+    try {
+      const result = await ai.chat({ modelId, ultra, history: convo.history, onText: (text) => send('delta', { text }) });
+      convo.history.push({ role: 'assistant', content: result.content });
+      return { reply: { text: result.text }, usage: result.usage };
+    } catch (err) {
+      convo.history.pop();
+      throw err;
+    }
+  }
+
+  async function runAgent(convo, { tool, modelId, ultra, prompt }, send) {
+    send('status', { text: ultra ? 'Working on the Ultra priority path…' : `${MODELS[modelId].name} is working…` });
+    const turns = convo.display
+      .filter((m) => m.role === 'ai' && m.prompt)
+      .map((m) => ({ prompt: m.prompt, reply: m.text }));
+    const { output, usage } = await ai.agent({
+      tool,
+      modelId,
+      ultra,
+      turns,
+      files: convo.files ?? [],
+      prompt,
+      onProgress: (text) => send('status', { text }),
+    });
+
+    if (tool === 'vidful') {
+      const files = [{ path: `${slug(output.title)}.svg`, content: output.svg }];
+      convo.files = files;
+      return { reply: { text: output.title, files, preview: 'movie' }, usage };
+    }
+    const files = output.files.map((f) => ({ path: cleanPath(f.path), content: f.content }));
+    convo.files = files;
+    return { reply: { text: output.summary, files }, usage };
+  }
+
   async function run(req, res) {
     const user = currentUser(req);
-    const { tool, modelId, prompt, ultra = false, conversationId } = await readJson(req);
-    if (typeof prompt !== 'string' || !prompt.trim()) throw new RakenError('empty_prompt', 'Write a prompt first.');
+    const body = await readJson(req, 2_000_000);
+    const { tool, modelId, prompt, conversationId, skipCheck = false } = body;
+    const ultra = Boolean(body.ultra);
+    if (typeof prompt !== 'string' || !prompt.trim()) throw new RakenError('empty_prompt', 'Write a message first.');
 
     let convo = conversationId ? conversation(user, conversationId) : null;
-    if (convo && running.has(convo.id)) throw new RakenError('busy', 'Raken is still answering in this conversation.');
-    const charged = charge(user.account, { tool, modelId, prompt, ultra: Boolean(ultra) });
-    if (!convo) {
-      const id = randomUUID();
-      convo = data.conversations[id] = {
-        id,
-        userId: user.id,
-        title: prompt.trim().slice(0, 60),
-        createdAt: new Date().toISOString(),
-        history: [],
-        display: [],
-      };
-    }
-    running.add(convo.id);
-    db.save();
+    if (convo && convo.tool !== tool) throw new RakenError('bad_tool', `This conversation belongs to ${TOOLS[convo.tool].name}.`);
+    if (convo && running.has(convo.id)) throw new RakenError('busy', 'Raken is still working in this conversation.');
+    authorize(user.account, { tool, modelId, ultra });
 
     const send = sse(res);
-    send('start', { conversationId: convo.id, title: convo.title, account: me(user) });
-    const userTurn = { role: 'user', text: prompt, tool, model: modelId };
-
+    if (convo) running.add(convo.id);
     try {
-      const kind = ai.outputKind(tool, modelId);
-      let reply;
-      if (!kind) {
-        convo.history.push({ role: 'user', content: prompt });
-        try {
-          const result = await ai.chat({
-            modelId,
-            ultra,
-            history: convo.history,
-            onText: (text) => send('delta', { text }),
-          });
-          convo.history.push({ role: 'assistant', content: result.content });
-          reply = { text: result.text };
-        } catch (err) {
-          convo.history.pop();
-          throw err;
-        }
-      } else {
-        send('status', { text: `${MODELS[modelId].name} is working…` });
-        const out = await ai.create({ kind, modelId, ultra, prompt });
-        if (kind === 'work') {
-          reply = { text: out.summary, files: out.files.map((f) => ({ name: f.name, content: f.content })) };
-        } else if (kind === 'mesh') {
-          reply = { text: out.title, files: [{ name: `${slug(out.title)}.obj`, content: out.obj }], preview: { type: 'mesh' } };
-        } else {
-          reply = { text: out.title, files: [{ name: `${slug(out.title)}.svg`, content: out.svg }], preview: { type: kind } };
+      // Big Code and Work tasks: suggest Ultra Credits before spending anything.
+      if ((tool === 'code' || tool === 'work') && !ultra && !skipCheck) {
+        send('status', { text: 'Sizing up the task…' });
+        const size = await ai.assess(prompt);
+        if (size && ULTRA_SIZES.has(size.size)) {
+          send('suggest_ultra', { estimate: size.estimate, reason: size.reason, account: me(user) });
+          return;
         }
       }
 
-      const aiTurn = { role: 'ai', ...reply, model: modelId, charged, ultra: Boolean(ultra) };
+      if (!convo) {
+        const id = randomUUID();
+        convo = data.conversations[id] = {
+          id,
+          userId: user.id,
+          tool,
+          title: prompt.trim().slice(0, 60),
+          createdAt: new Date().toISOString(),
+          history: [],
+          display: [],
+        };
+        running.add(id);
+      }
+      send('start', { conversationId: convo.id, title: convo.title, account: me(user) });
+
+      const job = { tool, modelId, ultra, prompt };
+      const { reply, usage } = tool === 'chat' ? await runChat(convo, job, send) : await runAgent(convo, job, send);
+      const charged = settle(user.account, { modelId, ultra, ...usage });
+      const userTurn = { role: 'user', text: prompt };
+      const aiTurn = { role: 'ai', ...reply, prompt, model: modelId, charged, ultra };
       convo.display.push(userTurn, aiTurn);
       convo.updatedAt = new Date().toISOString();
       send('done', { message: aiTurn, account: me(user) });
     } catch (err) {
-      refund(user.account, charged);
       const known = err instanceof RakenError;
       if (!known) console.error(err);
-      send('error', { message: known ? err.message : 'Something went wrong. Your credits were refunded.', account: me(user) });
+      send('error', { message: known ? err.message : 'Something went wrong. You were not charged.', code: known ? err.code : 'server_error', account: me(user) });
     } finally {
-      running.delete(convo.id);
+      if (convo) running.delete(convo.id);
       db.save();
       res.end();
     }
@@ -190,8 +209,9 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
       models: MODELS,
       tools: TOOLS,
       toolModels: TOOL_MODELS,
-      plans: PLANS,
-      billing: billing.configured,
+      plans: Object.fromEntries(Object.entries(PLANS).map(([id, p]) => [id, { ...p, weeklyUnits: weeklyUnits(id) }])),
+      packs: PACKS,
+      demoPayments: true,
     }),
 
     'POST /api/signup': async (req, res) => {
@@ -203,7 +223,6 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
     'POST /api/login': async (req, res) => {
       const { email, password } = await readJson(req);
       const { user, token } = await auth.login(email, password);
-      db.save();
       sendJson(res, 200, me(user), { 'set-cookie': sessionCookie(req, token) });
     },
 
@@ -219,13 +238,13 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
       return Object.values(data.conversations)
         .filter((c) => c.userId === user.id)
         .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt))
-        .map(({ id, title, updatedAt, createdAt }) => ({ id, title, updatedAt: updatedAt ?? createdAt }));
+        .map(({ id, title, tool = 'chat', updatedAt, createdAt }) => ({ id, title, tool, updatedAt: updatedAt ?? createdAt }));
     },
 
     'GET /api/conversation': (req) => {
       const id = new URL(req.url, 'http://x').searchParams.get('id');
-      const { title, display } = conversation(currentUser(req), id);
-      return { id, title, messages: display };
+      const { title, tool = 'chat', display } = conversation(currentUser(req), id);
+      return { id, title, tool, messages: display };
     },
 
     'POST /api/conversation/delete': async (req) => {
@@ -236,25 +255,20 @@ export function createApp({ db = openDb(), env = process.env } = {}) {
       return { ok: true };
     },
 
-    'POST /api/quote': async (req) => {
-      const { modelId, prompt = '' } = await readJson(req);
-      if (!MODELS[modelId]) throw new RakenError('bad_model', `Unknown model: ${modelId}`);
-      return { credits: creditCost(modelId, prompt), ultraCredits: ultraCost(modelId, prompt) };
-    },
-
     'POST /api/run': run,
 
-    'POST /api/billing/checkout': async (req) => {
+    'GET /api/billing/history': (req) => currentUser(req).orders ?? [],
+
+    'POST /api/billing/subscribe': async (req) => {
       const user = currentUser(req);
       const { plan } = await readJson(req);
-      return { url: await billing.checkout(user, plan, origin(req)) };
+      return { order: billing.subscribe(user, plan), account: me(user) };
     },
 
-    'POST /api/billing/portal': async (req) => ({ url: await billing.portal(currentUser(req), origin(req)) }),
-
-    'POST /api/billing/webhook': async (req) => {
-      await billing.webhook(await readBody(req, 1_000_000), req.headers['stripe-signature']);
-      return { received: true };
+    'POST /api/billing/buy': async (req) => {
+      const user = currentUser(req);
+      const { pack } = await readJson(req);
+      return { order: billing.buyPack(user, pack), account: me(user) };
     },
   };
 
