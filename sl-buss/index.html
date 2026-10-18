@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SL Självkörande buss</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --bg: #07121e;
+    --panel: #0f2133;
+    --panel-2: #142c44;
+    --line: #22405e;
+    --text: #f2f7fb;
+    --muted: #8fa9c2;
+    --blue: #0089ca;
+    --blue-2: #36b3f0;
+    --green: #2ecc71;
+    --red: #e2001a;
+    --amber: #ffb300;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex; align-items: center; gap: 16px;
+    height: 72px; padding: 0 28px;
+    background: linear-gradient(90deg, #0b2a44, #0a1b2d);
+    border-bottom: 1px solid var(--line);
+  }
+  .logo {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--blue); display: grid; place-items: center;
+    font-weight: 800; font-size: 20px; letter-spacing: -0.5px;
+    box-shadow: inset 0 0 0 3px #fff;
+  }
+  .title { display: flex; flex-direction: column; line-height: 1.15; }
+  .title b { font-size: 20px; }
+  .title span { font-size: 14px; color: var(--muted); }
+  .line-badge {
+    margin-left: 8px; padding: 6px 14px; border-radius: 10px;
+    background: var(--red); font-weight: 800; font-size: 18px;
+  }
+  .auto-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(46, 204, 113, .12); color: var(--green);
+    font-size: 14px; font-weight: 600;
+  }
+  .auto-chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--green); animation: pulse 1.6s infinite; }
+  .clock { margin-left: auto; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  main { height: calc(100% - 72px); position: relative; }
+  .screen { position: absolute; inset: 0; display: none; }
+  .screen.active { display: flex; animation: fade .35s ease; }
+
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* ---------- 1. QR-skärm ---------- */
+  #scan { align-items: center; justify-content: center; gap: 64px; padding: 32px; }
+  .scan-text { max-width: 460px; }
+  .scan-text h1 { font-size: 52px; margin: 0 0 12px; line-height: 1.05; }
+  .scan-text p { font-size: 22px; color: var(--muted); margin: 0 0 28px; }
+  .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .step { display: flex; align-items: center; gap: 14px; font-size: 19px; }
+  .step b {
+    width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--panel-2); border: 1px solid var(--line); font-size: 16px;
+  }
+  .step.on b { background: var(--blue); border-color: var(--blue); }
+  .btn {
+    border: 0; border-radius: 14px; padding: 16px 26px; font-size: 18px; font-weight: 600;
+    background: var(--panel-2); border: 1px solid var(--line);
+  }
+  .btn.primary { background: var(--blue); border-color: var(--blue); }
+  .btn:active { transform: scale(.98); }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .reader {
+    position: relative; width: 440px; height: 440px; flex: none;
+    border-radius: 28px; overflow: hidden;
+    background: radial-gradient(circle at 50% 40%, #12304d, #0a1828);
+    border: 2px solid var(--line);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  }
+  .reader video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .reader .idle {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    color: var(--muted); font-size: 18px; padding: 40px;
+  }
+  .reader .idle svg { width: 120px; height: 120px; opacity: .8; margin-bottom: 14px; }
+  .frame { position: absolute; inset: 60px; pointer-events: none; }
+  .frame::before, .frame::after, .frame span::before, .frame span::after {
+    content: ""; position: absolute; width: 56px; height: 56px; border: 6px solid var(--blue-2);
+  }
+  .frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 18px; }
+  .frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 18px; }
+  .frame span::before { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 18px; }
+  .frame span::after { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 18px; }
+  .laser {
+    position: absolute; left: 70px; right: 70px; height: 3px; top: 60px;
+    background: var(--blue-2); box-shadow: 0 0 18px var(--blue-2);
+    animation: laser 2.2s ease-in-out infinite alternate;
+  }
+  @keyframes laser { to { top: calc(100% - 63px); } }
+  .ok-overlay {
+    position: absolute; inset: 0; display: none; place-items: center; text-align: center;
+    background: rgba(9, 60, 32, .92); font-size: 26px; font-weight: 700;
+  }
+  .ok-overlay.show { display: grid; animation: fade .25s ease; }
+  .ok-overlay .tick {
+    width: 120px; height: 120px; border-radius: 50%; background: var(--green);
+    display: grid; place-items: center; margin: 0 auto 18px; font-size: 70px;
+  }
+  .ok-overlay small { display: block; margin-top: 8px; font-size: 15px; font-weight: 400; color: #bfe9cf; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scan-hint { margin-top: 18px; font-size: 15px; color: var(--muted); min-height: 20px; }
+
+  /* ---------- 2. Välj station ---------- */
+  #choose { flex-direction: column; padding: 36px 48px; gap: 24px; }
+  .choose-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+  .choose-head h1 { margin: 0; font-size: 42px; }
+  .choose-head p { margin: 6px 0 0; color: var(--muted); font-size: 19px; }
+  .station-grid {
+    flex: 1; display: grid; gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(180px, 1fr);
+    overflow: auto;
+  }
+  .station-btn {
+    text-align: left; padding: 24px; border-radius: var(--radius);
+    background: var(--panel); border: 1px solid var(--line);
+    display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 32px;
+    transition: border-color .15s, background .15s;
+  }
+  .station-btn:hover { border-color: var(--blue); background: var(--panel-2); }
+  .station-btn .name { font-size: 34px; font-weight: 700; }
+  .station-btn .meta { color: var(--muted); font-size: 20px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .station-btn .meta span { white-space: nowrap; }
+  .station-btn .tags { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .tag { font-size: 15px; padding: 6px 12px; border-radius: 999px; background: rgba(54,179,240,.14); color: var(--blue-2); }
+  .timeout-bar { height: 4px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+  .timeout-bar i { display: block; height: 100%; background: var(--blue); width: 100%; }
+
+  /* ---------- 3. Resa: GPS + Station ---------- */
+  #ride { padding: 20px; gap: 20px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+  }
+  .panel-head {
+    display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+    border-bottom: 1px solid var(--line); font-size: 15px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  }
+  .panel-head .right { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .gps-panel { flex: 1.35; }
+  .station-panel { flex: 1; }
+
+  #map { flex: 1; background: #0c1b2b; position: relative; }
+  .leaflet-container { background: #0c1b2b; font-family: inherit; }
+  .leaflet-tile-pane { filter: brightness(.72) saturate(.7) contrast(1.05); }
+  .bus-icon {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--blue); border: 4px solid #fff;
+    box-shadow: 0 0 0 8px rgba(0,137,202,.35), 0 6px 18px rgba(0,0,0,.5);
+    display: grid; place-items: center;
+  }
+  .bus-icon svg { width: 22px; height: 22px; transition: transform .3s linear; }
+  .stop-dot { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 4px solid var(--blue); }
+  .stop-dot.dest { border-color: var(--red); width: 24px; height: 24px; }
+  .stop-dot.done { border-color: #557089; background: #9fb3c6; }
+  .stop-label {
+    background: rgba(7,18,30,.85); color: #fff; border: 0; border-radius: 8px;
+    font-size: 13px; font-weight: 600; padding: 3px 8px; box-shadow: none;
+  }
+  .stop-label::before { display: none; }
+  .map-fallback { position: absolute; inset: 0; }
+
+  .telemetry {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    border-top: 1px solid var(--line); background: var(--panel-2);
+  }
+  .telemetry div { padding: 12px 16px; border-right: 1px solid var(--line); min-width: 0; }
+  .telemetry div:last-child { border-right: 0; }
+  .telemetry small { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .telemetry b { font-size: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sig { display: inline-flex; gap: 3px; align-items: end; height: 18px; margin-left: 6px; vertical-align: -2px; }
+  .sig i { width: 5px; background: var(--green); border-radius: 2px; }
+
+  .now-box { padding: 26px 26px 20px; border-bottom: 1px solid var(--line); }
+  .now-label { font-size: 17px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: 10px; }
+  .now-label .state { padding: 3px 10px; border-radius: 999px; font-size: 13px; letter-spacing: .04em; }
+  .state.at { background: rgba(46,204,113,.15); color: var(--green); }
+  .state.moving { background: rgba(54,179,240,.15); color: var(--blue-2); }
+  .now-name { font-size: 46px; font-weight: 800; line-height: 1.08; margin: 8px 0 6px; }
+  .now-sub { font-size: 19px; color: var(--muted); }
+  .door { margin-top: 14px; display: none; align-items: center; gap: 10px; color: var(--amber); font-weight: 700; font-size: 18px; }
+  .door.show { display: flex; }
+
+  .dest-box {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 20px; align-items: center;
+    padding: 18px 26px; background: var(--panel-2); border-bottom: 1px solid var(--line);
+  }
+  .dest-box small { display: block; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .dest-box b { font-size: 22px; }
+  .dest-box .big { font-size: 30px; font-variant-numeric: tabular-nums; }
+
+  .stops { flex: 1; overflow: auto; padding: 14px 26px 20px; }
+  .stop-row { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 14px; min-height: 54px; position: relative; }
+  .stop-row .rail { position: relative; height: 100%; display: grid; place-items: center; }
+  .stop-row .rail::before {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 6px; background: var(--line); left: 50%; transform: translateX(-50%);
+  }
+  .stop-row:first-child .rail::before { top: 50%; }
+  .stop-row:last-child .rail::before { bottom: 50%; }
+  .stop-row.done .rail::before, .stop-row.current .rail::before { background: var(--blue); }
+  .stop-row .dot { position: relative; width: 20px; height: 20px; border-radius: 50%; background: var(--panel); border: 4px solid var(--line); }
+  .stop-row.done .dot { background: var(--blue); border-color: var(--blue); }
+  .stop-row.current .dot { width: 28px; height: 28px; background: #fff; border-color: var(--blue); box-shadow: 0 0 0 6px rgba(0,137,202,.3); }
+  .stop-row.next .dot { border-color: var(--blue-2); }
+  .stop-row.dest .dot { border-color: var(--red); }
+  .stop-row .sname { font-size: 21px; font-weight: 600; }
+  .stop-row.done .sname { color: #6d88a2; font-weight: 400; }
+  .stop-row.current .sname { font-size: 24px; font-weight: 800; }
+  .stop-row.after-dest { opacity: .35; }
+  .stop-row .stime { font-size: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stop-row .flag { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--red); margin-left: 10px; vertical-align: 3px; }
+
+  .ticker {
+    padding: 12px 26px; border-top: 1px solid var(--line); font-size: 16px; color: var(--muted);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Ankomst-overlay */
+  .arrive {
+    position: absolute; inset: 0; display: none; place-items: center; z-index: 2000;
+    background: rgba(5, 14, 24, .88); backdrop-filter: blur(6px);
+  }
+  .arrive.show { display: grid; animation: fade .4s ease; }
+  .arrive-card { text-align: center; padding: 48px 64px; border-radius: 28px; background: var(--panel); border: 2px solid var(--green); max-width: 720px; }
+  .arrive-card .tick { width: 110px; height: 110px; border-radius: 50%; background: var(--green); display: grid; place-items: center; margin: 0 auto 20px; font-size: 64px; }
+  .arrive-card h2 { font-size: 44px; margin: 0 0 8px; }
+  .arrive-card p { font-size: 22px; color: var(--muted); margin: 0 0 26px; }
+
+  @media (max-width: 700px) {
+    header { padding: 0 16px; gap: 10px; }
+    .title span, .auto-chip { display: none; }
+    .clock { font-size: 22px; }
+  }
+  @media (max-width: 1100px) {
+    body { overflow: auto; }
+    main { height: auto; min-height: calc(100vh - 72px); }
+    .screen { position: static; }
+    .station-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    #scan { flex-direction: column; gap: 32px; }
+    .reader { width: min(440px, 90vw); height: min(440px, 90vw); }
+    #ride { flex-direction: column; }
+    .gps-panel { min-height: 520px; }
+    .telemetry { grid-template-columns: repeat(3, 1fr); }
+    .telemetry div:nth-child(3) { border-right: 0; }
+    .telemetry div:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SL</div>
+  <div class="title">
+    <b>Självkörande buss</b>
+    <span>Barkarbystaden · Järfälla</span>
+  </div>
+  <div class="line-badge">7A</div>
+  <div class="auto-chip"><i></i>Autonom körning</div>
+  <div class="clock" id="clock">--:--</div>
+</header>
+
+<main>
+  <!-- 1. Blippa QR-kod -->
+  <section class="screen active" id="scan">
+    <div class="scan-text">
+      <h1>Välkommen ombord!</h1>
+      <p>Blippa din biljett genom att visa QR-koden mot läsaren.</p>
+      <div class="steps">
+        <div class="step on"><b>1</b>Blippa QR-kod</div>
+        <div class="step"><b>2</b>Välj station</div>
+        <div class="step"><b>3</b>Följ resan</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="startCam">Starta kamera</button>
+        <button class="btn" id="simulate">Simulera blipp</button>
+      </div>
+      <div class="scan-hint" id="scanHint">Alla QR-koder godkänns i denna demo.</div>
+    </div>
+
+    <div class="reader">
+      <video id="video" playsinline muted></video>
+      <div class="idle" id="readerIdle">
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 20h2M20 14v2"/>
+          </svg>
+          <div>Håll QR-koden här</div>
+        </div>
+      </div>
+      <div class="frame"><span></span></div>
+      <div class="laser"></div>
+      <div class="ok-overlay" id="okOverlay">
+        <div>
+          <div class="tick">✓</div>
+          Biljett godkänd
+          <small id="qrText"></small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Välj station -->
+  <section class="screen" id="choose">
+    <div class="choose-head">
+      <div>
+        <h1>Vart ska du åka?</h1>
+        <p>Du står vid <b id="boardName"></b>. Tryck på den station du vill åka till.</p>
+      </div>
+      <button class="btn" id="cancelChoose">Avbryt</button>
+    </div>
+    <div class="timeout-bar"><i id="timeoutBar"></i></div>
+    <div class="station-grid" id="stationGrid"></div>
+  </section>
+
+  <!-- 3. Resa: GPS + station -->
+  <section class="screen" id="ride">
+    <div class="panel gps-panel">
+      <div class="panel-head">
+        GPS · Bussens position
+        <span class="right" id="gpsStatus">● Fix 3D</span>
+      </div>
+      <div id="map"></div>
+      <div class="telemetry">
+        <div><small>Latitud</small><b id="tLat">–</b></div>
+        <div><small>Longitud</small><b id="tLon">–</b></div>
+        <div><small>Hastighet</small><b id="tSpeed">0 km/h</b></div>
+        <div><small>Kurs</small><b id="tHead">–</b></div>
+        <div><small>Satelliter</small><b><span id="tSats">–</span><span class="sig"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></b></div>
+        <div><small>Noggrannhet</small><b id="tAcc">–</b></div>
+      </div>
+    </div>
+
+    <div class="panel station-panel">
+      <div class="panel-head">
+        Station
+        <span class="right" id="stopCount"></span>
+      </div>
+      <div class="now-box">
+        <div class="now-label"><span id="nowLabel">Du är vid</span><span class="state at" id="nowState">Vid hållplats</span></div>
+        <div class="now-name" id="nowName">–</div>
+        <div class="now-sub" id="nowSub"></div>
+        <div class="door" id="door">⇆ Dörrarna öppnas – kliv på och av här</div>
+      </div>
+      <div class="dest-box">
+        <div><small>Din station</small><b id="destName">–</b></div>
+        <div><small>Hållplatser kvar</small><b class="big" id="stopsLeft">–</b></div>
+        <div><small>Framme</small><b class="big" id="eta">–</b></div>
+      </div>
+      <div class="stops" id="stopList"></div>
+      <div class="ticker" id="ticker">Säkerhetsvärd finns ombord. Håll i dig under färden.</div>
+    </div>
+
+    <div class="arrive" id="arrive">
+      <div class="arrive-card">
+        <div class="tick">✓</div>
+        <h2 id="arriveTitle">Du är framme!</h2>
+        <p>Glöm inte dina saker. Tack för att du reste med SL.</p>
+        <button class="btn primary" id="arriveDone">Klar</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<canvas id="qrCanvas" hidden></canvas>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// ---------- Linjedata ----------
+// Hållplatser för den självkörande linjen. Index 0 är där passageraren kliver på.
+const STOPS = [
+  { name: "Barkarby station",      lat: 59.40430, lng: 17.86935, info: "Pendeltåg · Bussar" },
+  { name: "Barkarby handelsplats", lat: 59.40930, lng: 17.86640, info: "Butiker · Restauranger" },
+  { name: "Flygfältsgatan",        lat: 59.41270, lng: 17.87420, info: "Bostäder" },
+  { name: "Barkarbystaden C",      lat: 59.41160, lng: 17.88350, info: "Torg · Tunnelbana (2027)" },
+  { name: "Veddesta torg",         lat: 59.40720, lng: 17.89120, info: "Skola · Vårdcentral" },
+  { name: "Barkarby gård",         lat: 59.40280, lng: 17.88240, info: "Park · Ändhållplats" },
+];
+
+// Vägen bussen kör, med hållplatserna inlagda (stop = index i STOPS).
+const PATH = [
+  { lat: 59.40430, lng: 17.86935, stop: 0 },
+  { lat: 59.40560, lng: 17.86790 },
+  { lat: 59.40740, lng: 17.86700 },
+  { lat: 59.40930, lng: 17.86640, stop: 1 },
+  { lat: 59.41100, lng: 17.86760 },
+  { lat: 59.41220, lng: 17.87040 },
+  { lat: 59.41270, lng: 17.87420, stop: 2 },
+  { lat: 59.41290, lng: 17.87800 },
+  { lat: 59.41230, lng: 17.88120 },
+  { lat: 59.41160, lng: 17.88350, stop: 3 },
+  { lat: 59.41000, lng: 17.88620 },
+  { lat: 59.40830, lng: 17.88930 },
+  { lat: 59.40720, lng: 17.89120, stop: 4 },
+  { lat: 59.40540, lng: 17.88900 },
+  { lat: 59.40390, lng: 17.88580 },
+  { lat: 59.40280, lng: 17.88240, stop: 5 },
+];
+
+const AVG_KMH = 18;          // Snitthastighet för den självkörande bussen
+const TIME_SCALE = 8;        // Demo: resan går 8 gånger snabbare än i verkligheten
+const DWELL_MS = 7000;       // Stopptid vid hållplats (demo-tid)
+const IDLE_TIMEOUT_MS = 45000;
+
+// ---------- Hjälpfunktioner ----------
+const $ = id => document.getElementById(id);
+const toRad = d => d * Math.PI / 180;
+
+function haversine(a, b) {
+  const R = 6371000;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function bearing(a, b) {
+  const y = Math.sin(toRad(b.lng - a.lng)) * Math.cos(toRad(b.lat));
+  const x = Math.cos(toRad(a.lat)) * Math.sin(toRad(b.lat)) -
+            Math.sin(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.cos(toRad(b.lng - a.lng));
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function compass(deg) {
+  return ["N", "NO", "O", "SO", "S", "SV", "V", "NV"][Math.round(deg / 45) % 8];
+}
+
+const fmtTime = d => d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+
+// Kumulativ sträcka längs vägen, och var varje hållplats ligger på den.
+const CUM = [0];
+for (let i = 1; i < PATH.length; i++) CUM.push(CUM[i - 1] + haversine(PATH[i - 1], PATH[i]));
+const STOP_DIST = STOPS.map((_, s) => CUM[PATH.findIndex(p => p.stop === s)]);
+
+function pointAt(dist) {
+  let i = 1;
+  while (i < PATH.length - 1 && CUM[i] < dist) i++;
+  const a = PATH[i - 1], b = PATH[i];
+  const t = Math.min(1, Math.max(0, (dist - CUM[i - 1]) / (CUM[i] - CUM[i - 1] || 1)));
+  return { lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t, heading: bearing(a, b) };
+}
+
+// Verklig körtid (sekunder) för en sträcka i meter.
+const driveSeconds = m => m / (AVG_KMH / 3.6);
+
+// ---------- Klocka ----------
+function tickClock() { $("clock").textContent = fmtTime(new Date()); }
+tickClock();
+setInterval(tickClock, 1000);
+
+// ---------- Skärmbyten ----------
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  if (id === "ride") setTimeout(() => map.invalidate(), 50);
+}
+
+// ---------- 1. QR-skanning ----------
+let stream = null, scanning = false, scanned = false;
+const video = $("video"), canvas = $("qrCanvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
+const detector = ("BarcodeDetector" in window) ? new BarcodeDetector({ formats: ["qr_code"] }) : null;
+
+async function startCamera() {
+  if (stream) return;
+  $("scanHint").textContent = "Startar kamera…";
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 1280, height: 720 } });
+    video.srcObject = stream;
+    await video.play();
+    $("readerIdle").style.display = "none";
+    $("scanHint").textContent = "Kameran är på – visa din QR-kod.";
+    scanning = true;
+    requestAnimationFrame(scanLoop);
+  } catch (err) {
+    $("scanHint").textContent = "Kunde inte starta kameran. Använd ”Simulera blipp” eller en QR-läsare.";
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  video.srcObject = null;
+  $("readerIdle").style.display = "";
+}
+
+async function scanLoop() {
+  if (!scanning || scanned) return;
+  if (video.readyState >= 2) {
+    try {
+      let text = null;
+      if (detector) {
+        const codes = await detector.detect(video);
+        if (codes.length) text = codes[0].rawValue;
+      } else if (window.jsQR) {
+        const w = 480, h = Math.round(w * video.videoHeight / video.videoWidth) || 360;
+        canvas.width = w; canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        const code = jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: "dontInvert" });
+        if (code) text = code.data;
+      }
+      if (text !== null) return onScan(text || "(tom QR-kod)");
+    } catch (e) { /* hoppa över bildrutan */ }
+  }
+  requestAnimationFrame(scanLoop);
+}
+
+function onScan(text) {
+  if (scanned) return;
+  scanned = true;
+  $("qrText").textContent = text;
+  $("okOverlay").classList.add("show");
+  beep();
+  setTimeout(() => {
+    stopCamera();
+    $("okOverlay").classList.remove("show");
+    openChooser();
+  }, 1600);
+}
+
+function beep() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 1320; g.gain.value = 0.08;
+    o.connect(g).connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + 0.15);
+  } catch (e) {}
+}
+
+$("startCam").onclick = startCamera;
+$("simulate").onclick = () => onScan("SL-BILJETT-" + Math.random().toString(36).slice(2, 10).toUpperCase());
+
+// Fristående QR-läsare (USB/hårdvara) skriver koden som tangenttryck följt av Enter.
+let wedge = "", wedgeTimer = null;
+document.addEventListener("keydown", e => {
+  if (!$("scan").classList.contains("active")) return;
+  if (e.key === "Enter") { if (wedge.length > 2) onScan(wedge); wedge = ""; return; }
+  if (e.key.length === 1) {
+    wedge += e.key;
+    clearTimeout(wedgeTimer);
+    wedgeTimer = setTimeout(() => wedge = "", 300);
+  }
+});
+
+// ---------- 2. Välj station ----------
+let idleTimer = null, idleStart = 0;
+
+function openChooser() {
+  $("boardName").textContent = STOPS[0].name;
+  const grid = $("stationGrid");
+  grid.innerHTML = "";
+  STOPS.forEach((s, i) => {
+    if (i === 0) return;
+    const meters = STOP_DIST[i] - STOP_DIST[0];
+    const min = Math.ceil((driveSeconds(meters) + (i - 1) * 25) / 60);
+    const btn = document.createElement("button");
+    btn.className = "station-btn";
+    btn.innerHTML = `
+      <span class="name">${s.name}</span>
+      <span class="meta"><span>${i} ${i === 1 ? "hållplats" : "hållplatser"}</span><span>ca ${min} min</span><span>${(meters / 1000).toFixed(1).replace(".", ",")} km</span></span>
+      <span class="tags">${s.info.split(" · ").map(t => `<span class="tag">${t}</span>`).join("")}</span>`;
+    btn.onclick = () => startRide(i);
+    grid.appendChild(btn);
+  });
+  show("choose");
+  idleStart = performance.now();
+  clearInterval(idleTimer);
+  idleTimer = setInterval(() => {
+    const left = 1 - (performance.now() - idleStart) / IDLE_TIMEOUT_MS;
+    $("timeoutBar").style.width = Math.max(0, left * 100) + "%";
+    if (left <= 0) resetToScan();
+  }, 100);
+}
+
+$("cancelChoose").onclick = () => resetToScan();
+
+function resetToScan() {
+  clearInterval(idleTimer);
+  ride.running = false;
+  $("arrive").classList.remove("show");
+  scanned = false;
+  show("scan");
+}
+
+// ---------- Karta (Leaflet, med SVG-reserv utan nätverk) ----------
+const busSvg = `<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2 20 21 12 17 4 21z"/></svg>`;
+
+const map = (() => {
+  if (window.L) {
+    const m = L.map("map", { zoomControl: false, attributionControl: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19, attribution: "© OpenStreetMap"
+    }).addTo(m);
+    const routeLine = PATH.map(p => [p.lat, p.lng]);
+    L.polyline(routeLine, { color: "#0089ca", weight: 8, opacity: .9 }).addTo(m);
+    const doneLine = L.polyline([], { color: "#9fb3c6", weight: 8, opacity: .9 }).addTo(m);
+    const stopMarkers = STOPS.map(s =>
+      L.marker([s.lat, s.lng], { icon: L.divIcon({ className: "", html: '<div class="stop-dot"></div>', iconSize: [18, 18] }) })
+        .bindTooltip(s.name, { permanent: true, direction: "right", offset: [12, 0], className: "stop-label" })
+        .addTo(m));
+    const bus = L.marker([STOPS[0].lat, STOPS[0].lng], {
+      zIndexOffset: 1000,
+      icon: L.divIcon({ className: "", html: `<div class="bus-icon">${busSvg}</div>`, iconSize: [46, 46], iconAnchor: [23, 23] })
+    }).addTo(m);
+    m.fitBounds(L.latLngBounds(routeLine).pad(0.15));
+    let follow = true;
+    m.on("dragstart", () => follow = false);
+    return {
+      invalidate() { m.invalidateSize(); m.fitBounds(L.latLngBounds(routeLine).pad(0.15)); follow = true; },
+      setStops(dest, passed) {
+        stopMarkers.forEach((mk, i) => {
+          const cls = i === dest ? "stop-dot dest" : i <= passed ? "stop-dot done" : "stop-dot";
+          mk.setIcon(L.divIcon({ className: "", html: `<div class="${cls}"></div>`, iconSize: [i === dest ? 24 : 18, i === dest ? 24 : 18] }));
+        });
+      },
+      setBus(p, dist) {
+        bus.setLatLng([p.lat, p.lng]);
+        const el = bus.getElement();
+        if (el) el.querySelector("svg").style.transform = `rotate(${p.heading}deg)`;
+        const pts = PATH.filter((_, i) => CUM[i] <= dist).map(q => [q.lat, q.lng]);
+        pts.push([p.lat, p.lng]);
+        doneLine.setLatLngs(pts);
+        if (follow && m.getZoom() >= 16) m.panTo([p.lat, p.lng], { animate: false });
+      }
+    };
+  }
+
+  // Reserv: enkel SVG-karta när kartbiblioteket inte kunde laddas.
+  const host = $("map");
+  const lats = PATH.map(p => p.lat), lngs = PATH.map(p => p.lng);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats), minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const W = 1000, H = 640, pad = 80, kx = Math.cos(toRad((minLat + maxLat) / 2));
+  const sx = (W - 2 * pad) / ((maxLng - minLng) * kx), sy = (H - 2 * pad) / (maxLat - minLat), s = Math.min(sx, sy);
+  const X = lng => pad + (lng - minLng) * kx * s, Y = lat => H - pad - (lat - minLat) * s;
+  const pts = PATH.map(p => `${X(p.lng)},${Y(p.lat)}`).join(" ");
+  host.innerHTML = `<svg class="map-fallback" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+    <defs><pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#17324d"/></pattern></defs>
+    <rect width="${W}" height="${H}" fill="url(#g)"/>
+    <polyline points="${pts}" fill="none" stroke="#0089ca" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline id="fbDone" points="" fill="none" stroke="#9fb3c6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    ${STOPS.map((st, i) => `<g><circle id="fbStop${i}" cx="${X(st.lng)}" cy="${Y(st.lat)}" r="11" fill="#fff" stroke="#0089ca" stroke-width="5"/>
+      <text x="${X(st.lng) + 20}" y="${Y(st.lat) + 6}" fill="#fff" font-size="20" font-weight="600">${st.name}</text></g>`).join("")}
+    <g id="fbBus"><circle r="24" fill="#0089ca" stroke="#fff" stroke-width="5"/><path id="fbArrow" d="M0 -12 9 10 0 6 -9 10z" fill="#fff"/></g>
+  </svg>`;
+  return {
+    invalidate() {},
+    setStops(dest, passed) {
+      STOPS.forEach((_, i) => {
+        const c = $("fbStop" + i);
+        c.setAttribute("stroke", i === dest ? "#e2001a" : i <= passed ? "#557089" : "#0089ca");
+        c.setAttribute("fill", i <= passed && i !== dest ? "#9fb3c6" : "#fff");
+      });
+    },
+    setBus(p, dist) {
+      $("fbBus").setAttribute("transform", `translate(${X(p.lng)},${Y(p.lat)})`);
+      $("fbArrow").setAttribute("transform", `rotate(${p.heading})`);
+      const done = PATH.filter((_, i) => CUM[i] <= dist).map(q => `${X(q.lng)},${Y(q.lat)}`);
+      done.push(`${X(p.lng)},${Y(p.lat)}`);
+      $("fbDone").setAttribute("points", done.join(" "));
+    }
+  };
+})();
+
+// ---------- 3. Resan ----------
+const ride = { running: false, dest: 0, at: 0, phase: "dwell", phaseStart: 0, segTime: 0, dist: 0, raf: 0 };
+
+function startRide(dest) {
+  clearInterval(idleTimer);
+  Object.assign(ride, { running: true, dest, at: 0, phase: "dwell", phaseStart: performance.now(), dist: STOP_DIST[0] });
+  $("destName").textContent = STOPS[dest].name;
+  show("ride");
+  renderStops();
+  cancelAnimationFrame(ride.raf);
+  ride.raf = requestAnimationFrame(step);
+}
+
+function step(now) {
+  if (!ride.running) return;
+  const t = now - ride.phaseStart;
+  let speed = 0;
+
+  if (ride.phase === "dwell") {
+    ride.dist = STOP_DIST[ride.at];
+    if (ride.at === ride.dest) { arrive(); return; }
+    if (t >= DWELL_MS) {
+      const meters = STOP_DIST[ride.at + 1] - STOP_DIST[ride.at];
+      ride.segTime = driveSeconds(meters) * 1000 / TIME_SCALE;
+      ride.phase = "drive";
+      ride.phaseStart = now;
+      renderStops();
+    }
+  } else {
+    const from = STOP_DIST[ride.at], to = STOP_DIST[ride.at + 1];
+    const u = Math.min(1, t / ride.segTime);
+    // Mjuk acceleration och inbromsning.
+    ride.dist = from + (to - from) * (1 - Math.cos(Math.PI * u)) / 2;
+    speed = AVG_KMH * Math.PI / 2 * Math.sin(Math.PI * u);
+    if (u >= 1) {
+      ride.at++;
+      ride.phase = "dwell";
+      ride.phaseStart = now;
+      renderStops();
+    }
+  }
+
+  updateTelemetry(speed, now);
+  ride.raf = requestAnimationFrame(step);
+}
+
+let lastTele = 0, sats = 11;
+function updateTelemetry(speed, now) {
+  const p = pointAt(ride.dist + (ride.phase === "dwell" ? 0.01 : 0));
+  map.setBus(p, ride.dist);
+  if (now - lastTele < 200) return;
+  lastTele = now;
+  // Lite brus så att GPS-värdena känns levande.
+  const jitter = () => (Math.random() - 0.5) * 0.000004;
+  $("tLat").textContent = (p.lat + jitter()).toFixed(5) + "° N";
+  $("tLon").textContent = (p.lng + jitter()).toFixed(5) + "° O";
+  $("tSpeed").textContent = Math.round(speed) + " km/h";
+  $("tHead").textContent = Math.round(p.heading) + "° " + compass(p.heading);
+  if (Math.random() < 0.05) sats = Math.max(9, Math.min(14, sats + (Math.random() < 0.5 ? -1 : 1)));
+  $("tSats").textContent = sats;
+  $("tAcc").textContent = "± " + (0.8 + Math.random() * 0.6).toFixed(1).replace(".", ",") + " m";
+  updateEta(now);
+}
+
+function remainingSeconds(now) {
+  // Verklig återstående tid fram till vald station.
+  const meters = STOP_DIST[ride.dest] - ride.dist;
+  const stopsBetween = Math.max(0, ride.dest - ride.at - 1);
+  let secs = driveSeconds(meters) + stopsBetween * 25;
+  if (ride.phase === "dwell") secs += Math.max(0, DWELL_MS - (now - ride.phaseStart)) / 1000 * TIME_SCALE;
+  return secs;
+}
+
+function updateEta(now) {
+  const secs = remainingSeconds(now);
+  const min = Math.ceil(secs / 60);
+  $("eta").textContent = min <= 1 ? "< 1 min" : min + " min";
+  $("stopsLeft").textContent = ride.dest - ride.at;
+  if (ride.phase === "dwell") {
+    const s = Math.ceil(Math.max(0, DWELL_MS - (now - ride.phaseStart)) / 1000);
+    $("nowSub").textContent = `${STOPS[ride.at].info} · Avgår om ${s} s`;
+  }
+}
+
+function renderStops() {
+  const dwelling = ride.phase === "dwell";
+  const next = ride.at + 1;
+
+  $("nowLabel").textContent = dwelling ? "Du är vid" : "Nästa hållplats";
+  $("nowState").textContent = dwelling ? "Vid hållplats" : "Under färd";
+  $("nowState").className = "state " + (dwelling ? "at" : "moving");
+  $("nowName").textContent = dwelling ? STOPS[ride.at].name : STOPS[next].name;
+  $("nowSub").textContent = dwelling ? STOPS[ride.at].info : `Senaste hållplats: ${STOPS[ride.at].name}`;
+  $("door").classList.toggle("show", dwelling);
+  $("stopCount").textContent = `Hållplats ${ride.at + 1} av ${STOPS.length}`;
+
+  $("ticker").textContent = !dwelling && next === ride.dest
+    ? `Nästa hållplats är din station: ${STOPS[ride.dest].name}. Förbered dig på att kliva av.`
+    : "Säkerhetsvärd finns ombord. Håll i dig under färden.";
+
+  const base = Date.now();
+  $("stopList").innerHTML = STOPS.map((s, i) => {
+    let cls = "stop-row";
+    if (i < ride.at || (i === ride.at && !dwelling)) cls += " done";
+    if (i === ride.at && dwelling) cls += " current";
+    if (i === next && !dwelling) cls += " next";
+    if (i === ride.dest) cls += " dest";
+    if (i > ride.dest) cls += " after-dest";
+    let time = "";
+    if (i > ride.at && i <= ride.dest) {
+      const secs = driveSeconds(STOP_DIST[i] - ride.dist) + Math.max(0, i - ride.at - 1) * 25;
+      time = fmtTime(new Date(base + secs * 1000));
+    } else if (i === ride.at && dwelling) time = "Nu";
+    return `<div class="${cls}">
+      <div class="rail"><div class="dot"></div></div>
+      <div class="sname">${s.name}${i === ride.dest ? '<span class="flag">DIN STATION</span>' : ""}</div>
+      <div class="stime">${time}</div>
+    </div>`;
+  }).join("");
+
+  map.setStops(ride.dest, dwelling ? ride.at - 1 : ride.at);
+}
+
+function arrive() {
+  ride.running = false;
+  updateTelemetry(0, performance.now());
+  $("eta").textContent = "Nu";
+  $("stopsLeft").textContent = "0";
+  $("arriveTitle").textContent = `Du är framme vid ${STOPS[ride.dest].name}!`;
+  $("arrive").classList.add("show");
+  beep();
+  clearTimeout(ride.doneTimer);
+  ride.doneTimer = setTimeout(resetToScan, 12000);
+}
+
+$("arriveDone").onclick = () => { clearTimeout(ride.doneTimer); resetToScan(); };
+</script>
+</body>
+</html>
