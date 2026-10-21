@@ -1,0 +1,1799 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+  <Meta name="ExplicitAutoJoints">true</Meta>
+  <Item class="Workspace" referent="RBX0">
+    <Properties>
+      <string name="Name">Workspace</string>
+    </Properties>
+    <Item class="Part" referent="RBX1">
+      <Properties>
+        <string name="Name">Baseplate</string>
+        <bool name="Anchored">true</bool>
+        <bool name="CanCollide">true</bool>
+        <Vector3 name="size"><X>2048</X><Y>16</Y><Z>2048</Z></Vector3>
+        <CoordinateFrame name="CFrame"><X>0</X><Y>-8</Y><Z>0</Z><R00>1</R00><R01>0</R01><R02>0</R02><R10>0</R10><R11>1</R11><R12>0</R12><R20>0</R20><R21>0</R21><R22>1</R22></CoordinateFrame>
+        <Color3uint8 name="Color3uint8">4282281534</Color3uint8>
+        <token name="Material">1280</token>
+        <token name="TopSurface">0</token>
+        <token name="BottomSurface">0</token>
+      </Properties>
+    </Item>
+    <Item class="SpawnLocation" referent="RBX2">
+      <Properties>
+        <string name="Name">SpawnLocation</string>
+        <bool name="Anchored">true</bool>
+        <bool name="CanCollide">true</bool>
+        <Vector3 name="size"><X>24</X><Y>1</Y><Z>24</Z></Vector3>
+        <CoordinateFrame name="CFrame"><X>0</X><Y>1.5</Y><Z>0</Z><R00>1</R00><R01>0</R01><R02>0</R02><R10>0</R10><R11>1</R11><R12>0</R12><R20>0</R20><R21>0</R21><R22>1</R22></CoordinateFrame>
+        <Color3uint8 name="Color3uint8">4294946876</Color3uint8>
+        <token name="Material">288</token>
+        <token name="TopSurface">0</token>
+        <token name="BottomSurface">0</token>
+        <bool name="Neutral">true</bool>
+        <int name="Duration">0</int>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="Lighting" referent="RBX3">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <float name="Brightness">2.5</float>
+      <float name="ClockTime">14.5</float>
+      <bool name="GlobalShadows">true</bool>
+      <Color3 name="Ambient"><R>0.27450980392156865</R><G>0.2823529411764706</G><B>0.32941176470588235</B></Color3>
+      <Color3 name="OutdoorAmbient"><R>0.47058823529411764</R><G>0.47843137254901963</G><B>0.5333333333333333</B></Color3>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="RBX4">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="ModuleScript" referent="RBX5">
+      <Properties>
+        <string name="Name">HotDogData</string>
+        <ProtectedString name="Source"><![CDATA[
+--[[
+	HotDogData
+	Shared catalogue of every hot dog in the game.
+
+	Income is paid out once per second for every hot dog standing on your base,
+	including the ones you stole from somebody else.
+
+	DevProductId: create a Developer Product in Studio for each paid hot dog
+	(Game Settings -> Monetization -> Developer Products) and paste the id here.
+	A DevProductId of 0 simply disables the Robux button for that hot dog.
+--]]
+
+local HotDogData = {}
+
+HotDogData.List = {
+	{
+		Id = "hot_dog",
+		Name = "Hot Dog",
+		Rarity = "Common",
+		Price = 20,
+		Income = 3,
+		Robux = 0,
+		DevProductId = 0,
+		StealSeconds = 3,
+		BunColor = Color3.fromRGB(226, 178, 102),
+		BunMaterial = Enum.Material.SmoothPlastic,
+		SausageColor = Color3.fromRGB(176, 76, 48),
+		SausageMaterial = Enum.Material.SmoothPlastic,
+	},
+	{
+		Id = "goblin_hot_dog",
+		Name = "Goblin Hot Dog",
+		Rarity = "Uncommon",
+		Price = 120,
+		Income = 50,
+		Robux = 50,
+		DevProductId = 0,
+		StealSeconds = 4,
+		BunColor = Color3.fromRGB(135, 168, 96),
+		BunMaterial = Enum.Material.SmoothPlastic,
+		SausageColor = Color3.fromRGB(86, 168, 60),
+		SausageMaterial = Enum.Material.Slate,
+	},
+	{
+		Id = "needoh_hot_dog",
+		Name = "Needoh Hot Dog",
+		Rarity = "Rare",
+		Price = 700,
+		Income = 90,
+		Robux = 100,
+		DevProductId = 0,
+		StealSeconds = 5,
+		BunColor = Color3.fromRGB(255, 214, 160),
+		BunMaterial = Enum.Material.SmoothPlastic,
+		SausageColor = Color3.fromRGB(255, 140, 170),
+		SausageMaterial = Enum.Material.Neon,
+	},
+	{
+		Id = "hacked_hot_dog",
+		Name = "Hacked Hot Dog",
+		Rarity = "Epic",
+		Price = 1200,
+		Income = 300,
+		Robux = 600,
+		DevProductId = 0,
+		StealSeconds = 6,
+		BunColor = Color3.fromRGB(38, 40, 48),
+		BunMaterial = Enum.Material.Metal,
+		SausageColor = Color3.fromRGB(60, 255, 120),
+		SausageMaterial = Enum.Material.Neon,
+	},
+	{
+		Id = "human_hot_dog",
+		Name = "Human Hot Dog",
+		Rarity = "Epic",
+		Price = 4900,
+		Income = 1000,
+		Robux = 1000,
+		StealSeconds = 7,
+		DevProductId = 0,
+		BunColor = Color3.fromRGB(200, 150, 120),
+		BunMaterial = Enum.Material.SmoothPlastic,
+		SausageColor = Color3.fromRGB(235, 186, 152),
+		SausageMaterial = Enum.Material.SmoothPlastic,
+	},
+	{
+		Id = "strawberry_hot_dog",
+		Name = "Strawberry Hot Dog",
+		Rarity = "Legendary",
+		Price = 79000,
+		Income = 5000,
+		Robux = 5000,
+		DevProductId = 0,
+		StealSeconds = 8,
+		BunColor = Color3.fromRGB(255, 170, 190),
+		BunMaterial = Enum.Material.SmoothPlastic,
+		SausageColor = Color3.fromRGB(220, 40, 70),
+		SausageMaterial = Enum.Material.Neon,
+	},
+	{
+		Id = "inverted_hot_dog",
+		Name = "Inverted Hot Dog",
+		Rarity = "Mythic",
+		Price = 690000,
+		Income = 19000,
+		Robux = 10000,
+		DevProductId = 0,
+		StealSeconds = 10,
+		BunColor = Color3.fromRGB(29, 77, 153),
+		BunMaterial = Enum.Material.Glass,
+		SausageColor = Color3.fromRGB(79, 179, 207),
+		SausageMaterial = Enum.Material.Neon,
+	},
+	{
+		Id = "silver_hot_dog",
+		Name = "Silver Hot Dog",
+		Rarity = "Godly",
+		Price = 6000000,
+		Income = 100000,
+		Robux = 50000,
+		DevProductId = 0,
+		StealSeconds = 12,
+		BunColor = Color3.fromRGB(168, 172, 184),
+		BunMaterial = Enum.Material.Metal,
+		SausageColor = Color3.fromRGB(226, 230, 240),
+		SausageMaterial = Enum.Material.Metal,
+	},
+}
+
+HotDogData.RarityColor = {
+	Common = Color3.fromRGB(190, 196, 208),
+	Uncommon = Color3.fromRGB(118, 214, 118),
+	Rare = Color3.fromRGB(88, 170, 255),
+	Epic = Color3.fromRGB(190, 118, 255),
+	Legendary = Color3.fromRGB(255, 176, 60),
+	Mythic = Color3.fromRGB(255, 96, 160),
+	Godly = Color3.fromRGB(240, 240, 255),
+}
+
+HotDogData.ById = {}
+HotDogData.ByProduct = {}
+
+for index, info in ipairs(HotDogData.List) do
+	info.Index = index
+	HotDogData.ById[info.Id] = info
+	if info.DevProductId ~= 0 then
+		HotDogData.ByProduct[info.DevProductId] = info
+	end
+end
+
+local SUFFIXES = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx" }
+
+-- 1234567 -> "1.2M"
+function HotDogData.Abbreviate(amount)
+	local value = math.floor(tonumber(amount) or 0)
+	local sign = value < 0 and "-" or ""
+	value = math.abs(value)
+
+	local step = 1
+	while value >= 1000 and step < #SUFFIXES do
+		value = value / 1000
+		step += 1
+	end
+
+	if step == 1 then
+		return sign .. string.format("%d", value)
+	end
+
+	local text = string.format("%.1f", value)
+	text = (string.gsub(text, "%.0$", ""))
+	return sign .. text .. SUFFIXES[step]
+end
+
+-- 1234567 -> "1,234,567"
+function HotDogData.Comma(amount)
+	local text = string.format("%d", math.floor(tonumber(amount) or 0))
+	local sign = ""
+	if string.sub(text, 1, 1) == "-" then
+		sign = "-"
+		text = string.sub(text, 2)
+	end
+
+	local grouped = text
+	while true do
+		local replaced
+		grouped, replaced = string.gsub(grouped, "^(%d+)(%d%d%d)", "%1,%2")
+		if replaced == 0 then
+			break
+		end
+	end
+
+	return sign .. grouped
+end
+
+return HotDogData
+]]></ProtectedString>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="RBX6">
+      <Properties>
+        <string name="Name">Remotes</string>
+      </Properties>
+      <Item class="RemoteEvent" referent="RBX7">
+        <Properties>
+          <string name="Name">BuyHotDog</string>
+        </Properties>
+      </Item>
+      <Item class="RemoteEvent" referent="RBX8">
+        <Properties>
+          <string name="Name">Notify</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="RBX9">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Script" referent="RBX10">
+      <Properties>
+        <string name="Name">Main</string>
+        <ProtectedString name="Source"><![CDATA[
+--[[
+	Steal a Hot Dog - server entry point.
+
+	Buy hot dogs, stand them on your base, collect cash every second,
+	and raid everybody else's base for theirs.
+--]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
+
+local HotDogData = require(ReplicatedStorage:WaitForChild("HotDogData"))
+local Modules = ServerScriptService:WaitForChild("Modules")
+local Plots = require(Modules:WaitForChild("Plots"))
+local HotDogs = require(Modules:WaitForChild("HotDogs"))
+
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local BuyHotDog = Remotes:WaitForChild("BuyHotDog")
+local Notify = Remotes:WaitForChild("Notify")
+
+local STARTING_CASH = 25
+local BUY_COOLDOWN = 0.25
+
+local lastBuy = {}
+local store = nil
+
+do
+	local ok, result = pcall(function()
+		return DataStoreService:GetDataStore("StealAHotDog_v1")
+	end)
+	if ok then
+		store = result
+	else
+		warn("[Steal a Hot Dog] DataStore unavailable, progress will not save: " .. tostring(result))
+	end
+end
+
+local function notify(player, message, kind)
+	Notify:FireClient(player, message, kind or "info")
+end
+
+HotDogs.Notify = notify
+
+local function cashValue(player)
+	local stats = player:FindFirstChild("leaderstats")
+	return stats and stats:FindFirstChild("Cash") or nil
+end
+
+local function addCash(player, amount)
+	local cash = cashValue(player)
+	if cash then
+		cash.Value += amount
+	end
+end
+
+local function grantHotDog(player, info, quiet)
+	local plot = Plots.Get(player)
+	if not plot then
+		return false
+	end
+
+	local slot = Plots.FreeSlot(plot)
+	if not slot then
+		if not quiet then
+			notify(player, "Your base is full! Steal-proof, but no room.", "warn")
+		end
+		return false
+	end
+
+	local model = HotDogs.Create(info)
+	HotDogs.Place(model, plot, slot)
+
+	if not quiet then
+		notify(player, "Bought a " .. info.Name .. "!", "good")
+	end
+	return true
+end
+
+----------------------------------------------------------------------
+-- Saving
+----------------------------------------------------------------------
+
+local function keyFor(player)
+	return "player_" .. player.UserId
+end
+
+local function loadProfile(player)
+	if not store then
+		return nil
+	end
+
+	local ok, data = pcall(function()
+		return store:GetAsync(keyFor(player))
+	end)
+
+	if ok and type(data) == "table" then
+		return data
+	end
+	return nil
+end
+
+local function saveProfile(player)
+	if not store then
+		return
+	end
+
+	local cash = cashValue(player)
+	local plot = Plots.Get(player)
+	if not cash or not plot then
+		return
+	end
+
+	local dogs = {}
+	for _, model in pairs(plot.Slots) do
+		table.insert(dogs, model:GetAttribute("HotDogId"))
+	end
+
+	local payload = { Cash = cash.Value, Dogs = dogs }
+	local ok, err = pcall(function()
+		store:SetAsync(keyFor(player), payload)
+	end)
+
+	if not ok then
+		warn("[Steal a Hot Dog] Failed to save " .. player.Name .. ": " .. tostring(err))
+	end
+end
+
+----------------------------------------------------------------------
+-- Players
+----------------------------------------------------------------------
+
+local function onCharacterAdded(player, character)
+	local plot = Plots.Get(player)
+	if plot then
+		local root = character:WaitForChild("HumanoidRootPart", 10)
+		if root then
+			task.wait(0.1)
+			character:PivotTo(Plots.SpawnCFrame(plot))
+		end
+	end
+
+	local humanoid = character:WaitForChild("Humanoid", 10)
+	if humanoid then
+		humanoid.Died:Connect(function()
+			HotDogs.DropCarried(player)
+		end)
+	end
+end
+
+local function onPlayerAdded(player)
+	local stats = Instance.new("Folder")
+	stats.Name = "leaderstats"
+
+	local cash = Instance.new("IntValue")
+	cash.Name = "Cash"
+	cash.Value = STARTING_CASH
+	cash.Parent = stats
+
+	stats.Parent = player
+	player:SetAttribute("Income", 0)
+	player:SetAttribute("Carrying", "")
+
+	local plot = Plots.Assign(player)
+	if not plot then
+		notify(player, "All bases are taken - you are spectating this round.", "warn")
+	end
+
+	local profile = loadProfile(player)
+	if profile then
+		cash.Value = tonumber(profile.Cash) or STARTING_CASH
+		if plot and type(profile.Dogs) == "table" then
+			for _, id in ipairs(profile.Dogs) do
+				local info = HotDogData.ById[id]
+				if info then
+					grantHotDog(player, info, true)
+				end
+			end
+		end
+	end
+
+	player.CharacterAdded:Connect(function(character)
+		onCharacterAdded(player, character)
+	end)
+
+	if player.Character then
+		onCharacterAdded(player, player.Character)
+	end
+
+	task.defer(function()
+		notify(player, "Welcome! Open the shop and buy your first hot dog.", "good")
+	end)
+end
+
+local function onPlayerRemoving(player)
+	saveProfile(player)
+
+	local carried = HotDogs.Carrying[player]
+	if carried then
+		HotDogs.Carrying[player] = nil
+		carried:Destroy()
+	end
+
+	lastBuy[player] = nil
+	Plots.Release(player)
+end
+
+----------------------------------------------------------------------
+-- Buying
+----------------------------------------------------------------------
+
+BuyHotDog.OnServerEvent:Connect(function(player, id)
+	if type(id) ~= "string" then
+		return
+	end
+
+	local info = HotDogData.ById[id]
+	if not info then
+		return
+	end
+
+	local now = os.clock()
+	if lastBuy[player] and now - lastBuy[player] < BUY_COOLDOWN then
+		return
+	end
+	lastBuy[player] = now
+
+	local cash = cashValue(player)
+	if not cash then
+		return
+	end
+
+	if cash.Value < info.Price then
+		notify(player, "You need $" .. HotDogData.Comma(info.Price - cash.Value) .. " more.", "warn")
+		return
+	end
+
+	local plot = Plots.Get(player)
+	if not plot or Plots.FreeSlot(plot) == nil then
+		notify(player, "No free pedestal on your base.", "warn")
+		return
+	end
+
+	cash.Value -= info.Price
+	grantHotDog(player, info)
+end)
+
+MarketplaceService.ProcessReceipt = function(receiptInfo)
+	local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
+	if not player then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
+	local info = HotDogData.ByProduct[receiptInfo.ProductId]
+	if not info then
+		warn("[Steal a Hot Dog] Unknown developer product: " .. tostring(receiptInfo.ProductId))
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
+	if not grantHotDog(player, info) then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
+	saveProfile(player)
+	return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+
+----------------------------------------------------------------------
+-- Boot
+----------------------------------------------------------------------
+
+Plots.Init()
+HotDogs.BindPlots()
+
+for _, plot in ipairs(Plots.All) do
+	plot.LockPrompt.Triggered:Connect(function(player)
+		if plot.Owner ~= player then
+			notify(player, "Only the owner can raise this shield.", "warn")
+			return
+		end
+
+		local ok, message = Plots.Lock(plot)
+		notify(player, message, ok and "good" or "warn")
+	end)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+for _, player in ipairs(Players:GetPlayers()) do
+	task.spawn(onPlayerAdded, player)
+end
+
+-- Income tick
+task.spawn(function()
+	while true do
+		task.wait(1)
+		for _, plot in ipairs(Plots.All) do
+			local owner = plot.Owner
+			if owner then
+				local income = Plots.Income(plot)
+				owner:SetAttribute("Income", income)
+				if income > 0 then
+					addCash(owner, income)
+				end
+				Plots.Refresh(plot)
+			end
+		end
+	end
+end)
+
+-- Periodic autosave
+task.spawn(function()
+	while true do
+		task.wait(120)
+		for _, player in ipairs(Players:GetPlayers()) do
+			saveProfile(player)
+		end
+	end
+end)
+
+game:BindToClose(function()
+	if RunService:IsStudio() then
+		return
+	end
+	for _, player in ipairs(Players:GetPlayers()) do
+		saveProfile(player)
+	end
+	task.wait(2)
+end)
+]]></ProtectedString>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="RBX11">
+      <Properties>
+        <string name="Name">Modules</string>
+      </Properties>
+      <Item class="ModuleScript" referent="RBX12">
+        <Properties>
+          <string name="Name">Plots</string>
+          <ProtectedString name="Source"><![CDATA[
+--[[
+	Plots
+	Builds the map and owns everything about a player's base:
+	pedestals, the deposit pad, the lock button and the shield.
+--]]
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local HotDogData = require(ReplicatedStorage:WaitForChild("HotDogData"))
+
+local Plots = {}
+
+local PLOT_COUNT = 8
+local PLOT_SIZE = 48
+local WALL_HEIGHT = 14
+local PEDESTAL_COUNT = 8
+
+Plots.PedestalCount = PEDESTAL_COUNT
+Plots.LockDuration = 20
+Plots.LockCooldown = 45
+
+local plots = {}
+Plots.All = plots
+
+local function newPart(props)
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.Material = Enum.Material.SmoothPlastic
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+
+	for key, value in pairs(props) do
+		part[key] = value
+	end
+
+	return part
+end
+
+local function newLabel(parent, text, size, position, color, scaled)
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = size
+	label.Position = position
+	label.Font = Enum.Font.GothamBold
+	label.Text = text
+	label.TextColor3 = color
+	label.TextScaled = scaled ~= false
+	label.Parent = parent
+	return label
+end
+
+local function buildSign(model, originCFrame)
+	local board = newPart({
+		Name = "Sign",
+		Size = Vector3.new(30, 8, 1),
+		CFrame = originCFrame * CFrame.new(0, WALL_HEIGHT + 5, PLOT_SIZE / 2),
+		Color = Color3.fromRGB(22, 24, 32),
+		Material = Enum.Material.SmoothPlastic,
+	})
+	board.Parent = model
+
+	local surface = Instance.new("SurfaceGui")
+	surface.Name = "Display"
+	surface.Face = Enum.NormalId.Front
+	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surface.PixelsPerStud = 32
+	surface.LightInfluence = 0
+	surface.Parent = board
+
+	local owner = newLabel(
+		surface,
+		"OPEN BASE",
+		UDim2.fromScale(1, 0.52),
+		UDim2.fromScale(0, 0.04),
+		Color3.fromRGB(255, 255, 255)
+	)
+	owner.Name = "Owner"
+
+	local income = newLabel(
+		surface,
+		"$0 / sec",
+		UDim2.fromScale(1, 0.34),
+		UDim2.fromScale(0, 0.58),
+		Color3.fromRGB(120, 230, 140)
+	)
+	income.Name = "Income"
+
+	return owner, income
+end
+
+local function buildPlot(index, originCFrame)
+	local model = Instance.new("Model")
+	model.Name = string.format("Plot%d", index)
+
+	local floor = newPart({
+		Name = "Floor",
+		Size = Vector3.new(PLOT_SIZE, 1, PLOT_SIZE),
+		CFrame = originCFrame,
+		Color = Color3.fromRGB(62, 70, 86),
+		Material = Enum.Material.Concrete,
+	})
+	floor.Parent = model
+
+	local trim = newPart({
+		Name = "Trim",
+		Size = Vector3.new(PLOT_SIZE + 3, 0.7, PLOT_SIZE + 3),
+		CFrame = originCFrame * CFrame.new(0, -0.45, 0),
+		Color = Color3.fromRGB(255, 176, 60),
+		Material = Enum.Material.Neon,
+	})
+	trim.Parent = model
+
+	local wallColor = Color3.fromRGB(40, 44, 56)
+
+	local backWall = newPart({
+		Name = "BackWall",
+		Size = Vector3.new(PLOT_SIZE, WALL_HEIGHT, 2),
+		CFrame = originCFrame * CFrame.new(0, WALL_HEIGHT / 2, PLOT_SIZE / 2),
+		Color = wallColor,
+	})
+	backWall.Parent = model
+
+	for _, side in ipairs({ -1, 1 }) do
+		local wall = newPart({
+			Name = "SideWall",
+			Size = Vector3.new(2, WALL_HEIGHT, PLOT_SIZE),
+			CFrame = originCFrame * CFrame.new(side * PLOT_SIZE / 2, WALL_HEIGHT / 2, 0),
+			Color = wallColor,
+		})
+		wall.Parent = model
+	end
+
+	-- The open side of the base. Turns solid while the base is locked.
+	local barrier = newPart({
+		Name = "Barrier",
+		Size = Vector3.new(PLOT_SIZE, WALL_HEIGHT, 1),
+		CFrame = originCFrame * CFrame.new(0, WALL_HEIGHT / 2, -PLOT_SIZE / 2),
+		Color = Color3.fromRGB(255, 70, 70),
+		Material = Enum.Material.ForceField,
+		Transparency = 0.95,
+		CanCollide = false,
+	})
+	barrier.Parent = model
+
+	local pedestals = {}
+	for slot = 1, PEDESTAL_COUNT do
+		local column = (slot - 1) % 4
+		local row = math.floor((slot - 1) / 4)
+		local offsetX = (column - 1.5) * 11
+		local offsetZ = 6 + row * 12
+
+		local pedestal = newPart({
+			Name = "Pedestal",
+			Size = Vector3.new(7, 3, 7),
+			CFrame = originCFrame * CFrame.new(offsetX, 2, offsetZ),
+			Color = Color3.fromRGB(34, 37, 47),
+			Material = Enum.Material.Marble,
+		})
+		pedestal:SetAttribute("Slot", slot)
+		pedestal.Parent = model
+
+		local glow = newPart({
+			Name = "Glow",
+			Size = Vector3.new(6.2, 0.3, 6.2),
+			CFrame = originCFrame * CFrame.new(offsetX, 3.6, offsetZ),
+			Color = Color3.fromRGB(255, 176, 60),
+			Material = Enum.Material.Neon,
+			Transparency = 0.35,
+		})
+		glow.Parent = model
+
+		pedestals[slot] = pedestal
+	end
+
+	local depositPad = newPart({
+		Name = "DepositPad",
+		Size = Vector3.new(14, 0.4, 10),
+		CFrame = originCFrame * CFrame.new(0, 0.7, -16),
+		Color = Color3.fromRGB(90, 220, 140),
+		Material = Enum.Material.Neon,
+		Transparency = 0.25,
+		CanCollide = false,
+	})
+	depositPad.Parent = model
+
+	local padSign = Instance.new("SurfaceGui")
+	padSign.Face = Enum.NormalId.Top
+	padSign.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	padSign.PixelsPerStud = 24
+	padSign.LightInfluence = 0
+	padSign.Parent = depositPad
+	newLabel(padSign, "DROP OFF", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0), Color3.fromRGB(10, 40, 20))
+
+	local lockButton = newPart({
+		Name = "LockButton",
+		Size = Vector3.new(4, 6, 4),
+		CFrame = originCFrame * CFrame.new(-PLOT_SIZE / 2 + 5, 3.5, -14),
+		Color = Color3.fromRGB(90, 190, 255),
+		Material = Enum.Material.Neon,
+	})
+	lockButton.Parent = model
+
+	local lockPrompt = Instance.new("ProximityPrompt")
+	lockPrompt.Name = "LockPrompt"
+	lockPrompt.ActionText = "Lock Base"
+	lockPrompt.ObjectText = "Shield"
+	lockPrompt.HoldDuration = 0.25
+	lockPrompt.MaxActivationDistance = 10
+	lockPrompt.RequiresLineOfSight = false
+	lockPrompt.Parent = lockButton
+
+	local ownerLabel, incomeLabel = buildSign(model, originCFrame)
+
+	model.PrimaryPart = floor
+
+	return {
+		Index = index,
+		Model = model,
+		Origin = originCFrame,
+		Owner = nil,
+		Pedestals = pedestals,
+		Slots = {},
+		Barrier = barrier,
+		DepositPad = depositPad,
+		LockButton = lockButton,
+		LockPrompt = lockPrompt,
+		OwnerLabel = ownerLabel,
+		IncomeLabel = incomeLabel,
+		Locked = false,
+		LockReadyAt = 0,
+	}
+end
+
+local function buildPlaza()
+	local plaza = Instance.new("Model")
+	plaza.Name = "Plaza"
+
+	local floor = newPart({
+		Name = "Floor",
+		Size = Vector3.new(70, 1, 70),
+		CFrame = CFrame.new(0, 0.5, 0),
+		Color = Color3.fromRGB(52, 58, 72),
+		Material = Enum.Material.Pebble,
+	})
+	floor.Parent = plaza
+
+	local pillar = newPart({
+		Name = "Monument",
+		Size = Vector3.new(6, 18, 6),
+		CFrame = CFrame.new(0, 10, 26),
+		Color = Color3.fromRGB(255, 176, 60),
+		Material = Enum.Material.Neon,
+		Transparency = 0.15,
+		CanCollide = true,
+	})
+	pillar.Parent = plaza
+
+	local board = newPart({
+		Name = "Welcome",
+		Size = Vector3.new(26, 9, 1),
+		CFrame = CFrame.new(0, 24, 26),
+		Color = Color3.fromRGB(22, 24, 32),
+	})
+	board.Parent = plaza
+
+	for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back }) do
+		local surface = Instance.new("SurfaceGui")
+		surface.Face = face
+		surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		surface.PixelsPerStud = 32
+		surface.LightInfluence = 0
+		surface.Parent = board
+
+		newLabel(
+			surface,
+			"STEAL A HOT DOG",
+			UDim2.fromScale(1, 0.55),
+			UDim2.fromScale(0, 0.03),
+			Color3.fromRGB(255, 196, 80)
+		)
+		newLabel(
+			surface,
+			"Buy them. Guard them. Steal them.",
+			UDim2.fromScale(1, 0.3),
+			UDim2.fromScale(0, 0.6),
+			Color3.fromRGB(235, 235, 245)
+		)
+	end
+
+	plaza.PrimaryPart = floor
+	plaza.Parent = workspace
+end
+
+function Plots.Init()
+	if #plots > 0 then
+		return
+	end
+
+	local folder = Instance.new("Folder")
+	folder.Name = "Plots"
+	folder.Parent = workspace
+
+	for index = 1, PLOT_COUNT do
+		local column = (index - 1) % 4
+		local row = math.floor((index - 1) / 4)
+		local x = (column - 1.5) * 64
+		local z = (row == 0) and -64 or 64
+		local rotation = (row == 0) and math.pi or 0
+
+		local plot = buildPlot(index, CFrame.new(x, 0.5, z) * CFrame.Angles(0, rotation, 0))
+		plot.Model.Parent = folder
+		plots[index] = plot
+	end
+
+	buildPlaza()
+end
+
+function Plots.ByIndex(index)
+	return plots[index]
+end
+
+function Plots.Get(player)
+	for _, plot in ipairs(plots) do
+		if plot.Owner == player then
+			return plot
+		end
+	end
+	return nil
+end
+
+function Plots.Assign(player)
+	for _, plot in ipairs(plots) do
+		if plot.Owner == nil then
+			plot.Owner = player
+			player:SetAttribute("PlotIndex", plot.Index)
+			Plots.Refresh(plot)
+			return plot
+		end
+	end
+	return nil
+end
+
+function Plots.Release(player)
+	local plot = Plots.Get(player)
+	if not plot then
+		return
+	end
+
+	for slot, model in pairs(plot.Slots) do
+		plot.Slots[slot] = nil
+		model:Destroy()
+	end
+
+	plot.Owner = nil
+	plot.Locked = false
+	plot.LockReadyAt = 0
+	plot.Barrier.CanCollide = false
+	plot.Barrier.Transparency = 0.95
+	Plots.Refresh(plot)
+end
+
+function Plots.FreeSlot(plot)
+	for slot = 1, PEDESTAL_COUNT do
+		if plot.Slots[slot] == nil then
+			return slot
+		end
+	end
+	return nil
+end
+
+function Plots.Income(plot)
+	local total = 0
+	for _, model in pairs(plot.Slots) do
+		local info = HotDogData.ById[model:GetAttribute("HotDogId")]
+		if info then
+			total += info.Income
+		end
+	end
+	return total
+end
+
+function Plots.SpawnCFrame(plot)
+	return plot.Origin * CFrame.new(0, 4, -8)
+end
+
+function Plots.Refresh(plot)
+	local owner = plot.Owner
+	if owner then
+		plot.OwnerLabel.Text = string.upper(owner.DisplayName) .. "'S STAND"
+		plot.OwnerLabel.TextColor3 = plot.Locked and Color3.fromRGB(255, 120, 120) or Color3.fromRGB(255, 255, 255)
+		plot.IncomeLabel.Text = "$" .. HotDogData.Abbreviate(Plots.Income(plot)) .. " / sec"
+			.. (plot.Locked and "  [LOCKED]" or "")
+	else
+		plot.OwnerLabel.Text = "OPEN BASE"
+		plot.OwnerLabel.TextColor3 = Color3.fromRGB(150, 156, 170)
+		plot.IncomeLabel.Text = "$0 / sec"
+	end
+end
+
+-- Returns ok, message
+function Plots.Lock(plot)
+	if plot.Locked then
+		return false, "Your shield is already up."
+	end
+
+	local now = os.clock()
+	if now < plot.LockReadyAt then
+		return false, string.format("Shield recharging (%ds)", math.ceil(plot.LockReadyAt - now))
+	end
+
+	plot.Locked = true
+	plot.Barrier.CanCollide = true
+	plot.Barrier.Transparency = 0.35
+	Plots.Refresh(plot)
+
+	task.delay(Plots.LockDuration, function()
+		plot.Locked = false
+		plot.LockReadyAt = os.clock() + Plots.LockCooldown
+		plot.Barrier.CanCollide = false
+		plot.Barrier.Transparency = 0.95
+		Plots.Refresh(plot)
+	end)
+
+	return true, string.format("Shield up for %d seconds!", Plots.LockDuration)
+end
+
+return Plots
+]]></ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX13">
+        <Properties>
+          <string name="Name">HotDogs</string>
+          <ProtectedString name="Source"><![CDATA[
+--[[
+	HotDogs
+	Builds hot dog models and runs the steal / carry / drop-off loop.
+--]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local HotDogData = require(ReplicatedStorage:WaitForChild("HotDogData"))
+local Plots = require(script.Parent:WaitForChild("Plots"))
+
+local HotDogs = {}
+
+local carrying = {}
+HotDogs.Carrying = carrying
+
+-- Replaced by Main so this module can talk to the player's screen.
+HotDogs.Notify = function(_player, _message, _kind) end
+
+local function promptOf(model)
+	local primary = model.PrimaryPart
+	return primary and primary:FindFirstChildOfClass("ProximityPrompt") or nil
+end
+
+local function weldTo(anchor, part)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = anchor
+	weld.Part1 = part
+	weld.Parent = anchor
+end
+
+function HotDogs.Create(info)
+	local model = Instance.new("Model")
+	model.Name = info.Name
+	model:SetAttribute("HotDogId", info.Id)
+	model:SetAttribute("State", "Idle")
+	model:SetAttribute("CarriedBy", 0)
+
+	local bun = Instance.new("Part")
+	bun.Name = "Bun"
+	bun.Size = Vector3.new(5.2, 1.3, 2)
+	bun.Color = info.BunColor
+	bun.Material = info.BunMaterial
+	bun.Anchored = true
+	bun.CanCollide = false
+	bun.Massless = true
+	bun.TopSurface = Enum.SurfaceType.Smooth
+	bun.BottomSurface = Enum.SurfaceType.Smooth
+	bun.Parent = model
+
+	model.PrimaryPart = bun
+
+	local sausage = Instance.new("Part")
+	sausage.Name = "Sausage"
+	sausage.Shape = Enum.PartType.Cylinder
+	sausage.Size = Vector3.new(5.6, 1.3, 1.3)
+	sausage.Color = info.SausageColor
+	sausage.Material = info.SausageMaterial
+	sausage.Anchored = false
+	sausage.CanCollide = false
+	sausage.Massless = true
+	sausage.CFrame = bun.CFrame * CFrame.new(0, 0.8, 0)
+	sausage.Parent = model
+	weldTo(bun, sausage)
+
+	for _, side in ipairs({ -1, 1 }) do
+		local cap = Instance.new("Part")
+		cap.Name = "Cap"
+		cap.Shape = Enum.PartType.Ball
+		cap.Size = Vector3.new(1.3, 1.3, 1.3)
+		cap.Color = info.SausageColor
+		cap.Material = info.SausageMaterial
+		cap.Anchored = false
+		cap.CanCollide = false
+		cap.Massless = true
+		cap.CFrame = bun.CFrame * CFrame.new(side * 2.8, 0.8, 0)
+		cap.Parent = model
+		weldTo(bun, cap)
+	end
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "Tag"
+	billboard.Size = UDim2.fromOffset(220, 58)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.MaxDistance = 90
+	billboard.LightInfluence = 0
+	billboard.Parent = bun
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.fromScale(1, 0.58)
+	title.Font = Enum.Font.GothamBold
+	title.Text = info.Name
+	title.TextScaled = true
+	title.TextColor3 = HotDogData.RarityColor[info.Rarity] or Color3.fromRGB(255, 255, 255)
+	title.TextStrokeTransparency = 0.4
+	title.Parent = billboard
+
+	local rate = Instance.new("TextLabel")
+	rate.BackgroundTransparency = 1
+	rate.Position = UDim2.fromScale(0, 0.58)
+	rate.Size = UDim2.fromScale(1, 0.42)
+	rate.Font = Enum.Font.GothamMedium
+	rate.Text = "$" .. HotDogData.Abbreviate(info.Income) .. " / sec"
+	rate.TextScaled = true
+	rate.TextColor3 = Color3.fromRGB(130, 235, 150)
+	rate.TextStrokeTransparency = 0.5
+	rate.Parent = billboard
+
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "Interact"
+	prompt.ActionText = "Steal"
+	prompt.ObjectText = info.Name
+	prompt.HoldDuration = info.StealSeconds
+	prompt.MaxActivationDistance = 11
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = bun
+
+	prompt.Triggered:Connect(function(player)
+		HotDogs.OnPrompt(player, model)
+	end)
+
+	return model
+end
+
+function HotDogs.Place(model, plot, slot)
+	local info = HotDogData.ById[model:GetAttribute("HotDogId")]
+	if not info then
+		return false
+	end
+
+	local pedestal = plot.Pedestals[slot]
+	if not pedestal then
+		return false
+	end
+
+	local bun = model.PrimaryPart
+	local weld = bun:FindFirstChild("CarryWeld")
+	if weld then
+		weld:Destroy()
+	end
+
+	bun.Anchored = true
+	model.Parent = plot.Model
+	model:PivotTo(pedestal.CFrame * CFrame.new(0, 3.4, 0))
+
+	plot.Slots[slot] = model
+	model:SetAttribute("State", "Placed")
+	model:SetAttribute("PlotIndex", plot.Index)
+	model:SetAttribute("Slot", slot)
+	model:SetAttribute("CarriedBy", 0)
+
+	local prompt = promptOf(model)
+	if prompt then
+		prompt.ActionText = "Steal"
+		prompt.HoldDuration = info.StealSeconds
+		prompt.Enabled = true
+	end
+
+	Plots.Refresh(plot)
+	return true
+end
+
+local function unplace(model)
+	local plot = Plots.ByIndex(model:GetAttribute("PlotIndex"))
+	local slot = model:GetAttribute("Slot")
+	if plot and slot and plot.Slots[slot] == model then
+		plot.Slots[slot] = nil
+		Plots.Refresh(plot)
+	end
+	model:SetAttribute("PlotIndex", 0)
+	model:SetAttribute("Slot", 0)
+	return plot
+end
+
+HotDogs.Unplace = unplace
+
+local function carry(player, model)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return false
+	end
+
+	local bun = model.PrimaryPart
+	bun.Anchored = false
+	model.Parent = workspace
+	model:PivotTo(root.CFrame * CFrame.new(0, 2.4, -2.6))
+
+	local weld = Instance.new("Weld")
+	weld.Name = "CarryWeld"
+	weld.Part0 = root
+	weld.Part1 = bun
+	weld.C0 = CFrame.new(0, 2.4, -2.6)
+	weld.Parent = bun
+
+	carrying[player] = model
+	model:SetAttribute("State", "Carried")
+	model:SetAttribute("CarriedBy", player.UserId)
+	player:SetAttribute("Carrying", model.Name)
+
+	local prompt = promptOf(model)
+	if prompt then
+		prompt.Enabled = false
+	end
+
+	return true
+end
+
+function HotDogs.Drop(model, position)
+	local holderId = model:GetAttribute("CarriedBy")
+	if holderId and holderId ~= 0 then
+		local holder = Players:GetPlayerByUserId(holderId)
+		if holder then
+			carrying[holder] = nil
+			holder:SetAttribute("Carrying", "")
+		end
+	end
+
+	local bun = model.PrimaryPart
+	local weld = bun:FindFirstChild("CarryWeld")
+	if weld then
+		weld:Destroy()
+	end
+
+	bun.Anchored = true
+	model.Parent = workspace
+	model:PivotTo(CFrame.new(position.X, 4, position.Z))
+
+	model:SetAttribute("State", "Dropped")
+	model:SetAttribute("CarriedBy", 0)
+
+	local prompt = promptOf(model)
+	if prompt then
+		prompt.ActionText = "Grab"
+		prompt.HoldDuration = 1
+		prompt.Enabled = true
+	end
+end
+
+function HotDogs.DropCarried(player)
+	local model = carrying[player]
+	if not model then
+		return
+	end
+
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local position = root and root.Position or Vector3.new(0, 6, 0)
+	HotDogs.Drop(model, position)
+end
+
+function HotDogs.OnPrompt(player, model)
+	if model:GetAttribute("State") == "Carried" then
+		return
+	end
+
+	if carrying[player] then
+		HotDogs.Notify(player, "You can only carry one hot dog at a time!", "warn")
+		return
+	end
+
+	local home = Plots.Get(player)
+	if not home then
+		HotDogs.Notify(player, "You do not have a base yet.", "warn")
+		return
+	end
+
+	if Plots.FreeSlot(home) == nil then
+		HotDogs.Notify(player, "Your base is full - no room to put it down.", "warn")
+		return
+	end
+
+	if model:GetAttribute("State") == "Placed" then
+		local target = Plots.ByIndex(model:GetAttribute("PlotIndex"))
+		if target and target.Owner == player then
+			HotDogs.Notify(player, "That one is already yours.", "warn")
+			return
+		end
+		if target and target.Locked then
+			HotDogs.Notify(player, "That base is shielded right now!", "warn")
+			return
+		end
+
+		unplace(model)
+		if carry(player, model) then
+			HotDogs.Notify(player, "Stole a " .. model.Name .. "! Run it to your drop off pad.", "good")
+			if target and target.Owner then
+				HotDogs.Notify(target.Owner, player.DisplayName .. " stole your " .. model.Name .. "!", "bad")
+			end
+		end
+	elseif model:GetAttribute("State") == "Dropped" then
+		if carry(player, model) then
+			HotDogs.Notify(player, "Picked up a " .. model.Name .. "!", "good")
+		end
+	end
+end
+
+function HotDogs.BindPlots()
+	for _, plot in ipairs(Plots.All) do
+		plot.DepositPad.Touched:Connect(function(hit)
+			local player = Players:GetPlayerFromCharacter(hit.Parent)
+			if not player or plot.Owner ~= player then
+				return
+			end
+
+			local model = carrying[player]
+			if not model then
+				return
+			end
+
+			local slot = Plots.FreeSlot(plot)
+			if not slot then
+				HotDogs.Notify(player, "Your base is full!", "warn")
+				return
+			end
+
+			carrying[player] = nil
+			player:SetAttribute("Carrying", "")
+			HotDogs.Place(model, plot, slot)
+			HotDogs.Notify(player, model.Name .. " secured! It now pays you.", "good")
+		end)
+	end
+end
+
+return HotDogs
+]]></ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="RBX14">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="RBX15">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="RBX16">
+        <Properties>
+          <string name="Name">Client</string>
+          <ProtectedString name="Source"><![CDATA[
+--[[
+	Steal a Hot Dog - client interface.
+	Builds the HUD, the shop and the notification toasts in code.
+--]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local MarketplaceService = game:GetService("MarketplaceService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local HotDogData = require(ReplicatedStorage:WaitForChild("HotDogData"))
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local BuyHotDog = Remotes:WaitForChild("BuyHotDog")
+local Notify = Remotes:WaitForChild("Notify")
+
+local DARK = Color3.fromRGB(24, 26, 34)
+local PANEL = Color3.fromRGB(32, 35, 45)
+local ACCENT = Color3.fromRGB(255, 176, 60)
+local GREEN = Color3.fromRGB(90, 215, 130)
+local RED = Color3.fromRGB(255, 105, 105)
+local TEXT = Color3.fromRGB(240, 242, 248)
+
+local KIND_COLOR = {
+	good = GREEN,
+	warn = ACCENT,
+	bad = RED,
+	info = Color3.fromRGB(120, 190, 255),
+}
+
+local function corner(parent, radius)
+	local item = Instance.new("UICorner")
+	item.CornerRadius = UDim.new(0, radius or 10)
+	item.Parent = parent
+	return item
+end
+
+local function stroke(parent, color, thickness)
+	local item = Instance.new("UIStroke")
+	item.Color = color
+	item.Thickness = thickness or 1
+	item.Transparency = 0.35
+	item.Parent = parent
+	return item
+end
+
+local function padding(parent, amount)
+	local item = Instance.new("UIPadding")
+	item.PaddingTop = UDim.new(0, amount)
+	item.PaddingBottom = UDim.new(0, amount)
+	item.PaddingLeft = UDim.new(0, amount)
+	item.PaddingRight = UDim.new(0, amount)
+	item.Parent = parent
+	return item
+end
+
+local screen = Instance.new("ScreenGui")
+screen.Name = "StealAHotDog"
+screen.ResetOnSpawn = false
+screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screen.Parent = player:WaitForChild("PlayerGui")
+
+----------------------------------------------------------------------
+-- Cash HUD
+----------------------------------------------------------------------
+
+local hud = Instance.new("Frame")
+hud.Name = "Hud"
+hud.Size = UDim2.fromOffset(240, 78)
+hud.Position = UDim2.fromOffset(18, 18)
+hud.BackgroundColor3 = DARK
+hud.BackgroundTransparency = 0.1
+hud.BorderSizePixel = 0
+hud.Parent = screen
+corner(hud, 14)
+stroke(hud, ACCENT)
+
+local cashLabel = Instance.new("TextLabel")
+cashLabel.BackgroundTransparency = 1
+cashLabel.Size = UDim2.new(1, -20, 0, 40)
+cashLabel.Position = UDim2.fromOffset(14, 8)
+cashLabel.Font = Enum.Font.GothamBold
+cashLabel.TextXAlignment = Enum.TextXAlignment.Left
+cashLabel.TextColor3 = TEXT
+cashLabel.TextSize = 28
+cashLabel.Text = "$0"
+cashLabel.Parent = hud
+
+local rateLabel = Instance.new("TextLabel")
+rateLabel.BackgroundTransparency = 1
+rateLabel.Size = UDim2.new(1, -20, 0, 22)
+rateLabel.Position = UDim2.fromOffset(14, 46)
+rateLabel.Font = Enum.Font.GothamMedium
+rateLabel.TextXAlignment = Enum.TextXAlignment.Left
+rateLabel.TextColor3 = GREEN
+rateLabel.TextSize = 16
+rateLabel.Text = "+$0 / sec"
+rateLabel.Parent = hud
+
+----------------------------------------------------------------------
+-- Carry banner
+----------------------------------------------------------------------
+
+local banner = Instance.new("TextLabel")
+banner.Name = "CarryBanner"
+banner.AnchorPoint = Vector2.new(0.5, 0)
+banner.Position = UDim2.new(0.5, 0, 0, 18)
+banner.Size = UDim2.fromOffset(460, 44)
+banner.BackgroundColor3 = DARK
+banner.BackgroundTransparency = 0.1
+banner.BorderSizePixel = 0
+banner.Font = Enum.Font.GothamBold
+banner.TextSize = 18
+banner.TextColor3 = ACCENT
+banner.Text = ""
+banner.Visible = false
+banner.Parent = screen
+corner(banner, 12)
+stroke(banner, ACCENT)
+
+----------------------------------------------------------------------
+-- Toasts
+----------------------------------------------------------------------
+
+local toasts = Instance.new("Frame")
+toasts.Name = "Toasts"
+toasts.AnchorPoint = Vector2.new(0.5, 1)
+toasts.Position = UDim2.new(0.5, 0, 1, -130)
+toasts.Size = UDim2.fromOffset(520, 220)
+toasts.BackgroundTransparency = 1
+toasts.Parent = screen
+
+local toastLayout = Instance.new("UIListLayout")
+toastLayout.SortOrder = Enum.SortOrder.LayoutOrder
+toastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+toastLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+toastLayout.Padding = UDim.new(0, 6)
+toastLayout.Parent = toasts
+
+local function toast(message, kind)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromOffset(520, 36)
+	label.BackgroundColor3 = DARK
+	label.BackgroundTransparency = 0.12
+	label.BorderSizePixel = 0
+	label.Font = Enum.Font.GothamMedium
+	label.TextSize = 16
+	label.TextColor3 = KIND_COLOR[kind] or TEXT
+	label.Text = message
+	label.Parent = toasts
+	corner(label, 10)
+
+	task.delay(3.5, function()
+		local tween = TweenService:Create(label, TweenInfo.new(0.4), {
+			BackgroundTransparency = 1,
+			TextTransparency = 1,
+		})
+		tween.Completed:Connect(function()
+			label:Destroy()
+		end)
+		tween:Play()
+	end)
+end
+
+----------------------------------------------------------------------
+-- Shop
+----------------------------------------------------------------------
+
+local shop = Instance.new("Frame")
+shop.Name = "Shop"
+shop.AnchorPoint = Vector2.new(0.5, 0.5)
+shop.Position = UDim2.fromScale(0.5, 0.5)
+shop.Size = UDim2.fromOffset(640, 520)
+shop.BackgroundColor3 = PANEL
+shop.BorderSizePixel = 0
+shop.Visible = false
+shop.Parent = screen
+corner(shop, 16)
+stroke(shop, ACCENT, 2)
+
+local shopTitle = Instance.new("TextLabel")
+shopTitle.BackgroundTransparency = 1
+shopTitle.Size = UDim2.new(1, -24, 0, 48)
+shopTitle.Position = UDim2.fromOffset(20, 12)
+shopTitle.Font = Enum.Font.GothamBold
+shopTitle.TextXAlignment = Enum.TextXAlignment.Left
+shopTitle.TextColor3 = ACCENT
+shopTitle.TextSize = 26
+shopTitle.Text = "HOT DOG SHOP"
+shopTitle.Parent = shop
+
+local closeButton = Instance.new("TextButton")
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.Position = UDim2.new(1, -16, 0, 16)
+closeButton.Size = UDim2.fromOffset(38, 38)
+closeButton.BackgroundColor3 = Color3.fromRGB(58, 62, 76)
+closeButton.BorderSizePixel = 0
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 20
+closeButton.TextColor3 = TEXT
+closeButton.Text = "X"
+closeButton.Parent = shop
+corner(closeButton, 10)
+
+local list = Instance.new("ScrollingFrame")
+list.Position = UDim2.fromOffset(16, 66)
+list.Size = UDim2.new(1, -32, 1, -84)
+list.BackgroundTransparency = 1
+list.BorderSizePixel = 0
+list.ScrollBarThickness = 6
+list.CanvasSize = UDim2.new()
+list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+list.Parent = shop
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 8)
+listLayout.Parent = list
+
+local priceButtons = {}
+
+local function buildRow(info)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -8, 0, 76)
+	row.BackgroundColor3 = Color3.fromRGB(42, 46, 58)
+	row.BorderSizePixel = 0
+	row.LayoutOrder = info.Index
+	row.Parent = list
+	corner(row, 12)
+	stroke(row, HotDogData.RarityColor[info.Rarity] or TEXT)
+
+	local name = Instance.new("TextLabel")
+	name.BackgroundTransparency = 1
+	name.Position = UDim2.fromOffset(16, 10)
+	name.Size = UDim2.fromOffset(300, 26)
+	name.Font = Enum.Font.GothamBold
+	name.TextXAlignment = Enum.TextXAlignment.Left
+	name.TextSize = 19
+	name.TextColor3 = HotDogData.RarityColor[info.Rarity] or TEXT
+	name.Text = info.Name
+	name.Parent = row
+
+	local detail = Instance.new("TextLabel")
+	detail.BackgroundTransparency = 1
+	detail.Position = UDim2.fromOffset(16, 38)
+	detail.Size = UDim2.fromOffset(300, 22)
+	detail.Font = Enum.Font.GothamMedium
+	detail.TextXAlignment = Enum.TextXAlignment.Left
+	detail.TextSize = 15
+	detail.TextColor3 = GREEN
+	detail.Text = string.format("%s  -  $%s / sec", info.Rarity, HotDogData.Comma(info.Income))
+	detail.Parent = row
+
+	local buy = Instance.new("TextButton")
+	buy.AnchorPoint = Vector2.new(1, 0.5)
+	buy.Position = UDim2.new(1, -14, 0.5, 0)
+	buy.Size = UDim2.fromOffset(150, 40)
+	buy.BackgroundColor3 = Color3.fromRGB(56, 140, 86)
+	buy.BorderSizePixel = 0
+	buy.Font = Enum.Font.GothamBold
+	buy.TextSize = 17
+	buy.TextColor3 = TEXT
+	buy.Text = "$" .. HotDogData.Comma(info.Price)
+	buy.Parent = row
+	corner(buy, 10)
+
+	buy.Activated:Connect(function()
+		BuyHotDog:FireServer(info.Id)
+	end)
+
+	priceButtons[info.Id] = buy
+
+	if info.Robux > 0 then
+		buy.Size = UDim2.fromOffset(150, 30)
+		buy.Position = UDim2.new(1, -14, 0.5, -17)
+
+		local robux = Instance.new("TextButton")
+		robux.AnchorPoint = Vector2.new(1, 0.5)
+		robux.Position = UDim2.new(1, -14, 0.5, 19)
+		robux.Size = UDim2.fromOffset(150, 30)
+		robux.BackgroundColor3 = Color3.fromRGB(62, 96, 170)
+		robux.BorderSizePixel = 0
+		robux.Font = Enum.Font.GothamBold
+		robux.TextSize = 16
+		robux.TextColor3 = TEXT
+		robux.Text = "R$ " .. HotDogData.Comma(info.Robux)
+		robux.Parent = row
+		corner(robux, 10)
+
+		robux.Activated:Connect(function()
+			if info.DevProductId == 0 then
+				toast(info.Name .. ": Robux product not configured yet.", "warn")
+				return
+			end
+			MarketplaceService:PromptProductPurchase(player, info.DevProductId)
+		end)
+	end
+end
+
+for _, info in ipairs(HotDogData.List) do
+	buildRow(info)
+end
+
+local shopToggle = Instance.new("TextButton")
+shopToggle.AnchorPoint = Vector2.new(0, 0)
+shopToggle.Position = UDim2.fromOffset(18, 108)
+shopToggle.Size = UDim2.fromOffset(170, 48)
+shopToggle.BackgroundColor3 = ACCENT
+shopToggle.BorderSizePixel = 0
+shopToggle.Font = Enum.Font.GothamBold
+shopToggle.TextSize = 20
+shopToggle.TextColor3 = Color3.fromRGB(28, 22, 10)
+shopToggle.Text = "SHOP"
+shopToggle.Parent = screen
+corner(shopToggle, 12)
+
+local help = Instance.new("TextLabel")
+help.BackgroundColor3 = DARK
+help.BackgroundTransparency = 0.25
+help.BorderSizePixel = 0
+help.Position = UDim2.fromOffset(18, 166)
+help.Size = UDim2.fromOffset(250, 96)
+help.Font = Enum.Font.GothamMedium
+help.TextSize = 14
+help.TextColor3 = Color3.fromRGB(205, 210, 222)
+help.TextWrapped = true
+help.TextXAlignment = Enum.TextXAlignment.Left
+help.TextYAlignment = Enum.TextYAlignment.Top
+help.Text = "Buy hot dogs to earn cash every second.\nHold E on someone else's hot dog to steal it, then run it onto your green DROP OFF pad.\nHold E on your blue pillar to shield your base."
+help.Parent = screen
+corner(help, 12)
+padding(help, 10)
+
+shopToggle.Activated:Connect(function()
+	shop.Visible = not shop.Visible
+end)
+
+closeButton.Activated:Connect(function()
+	shop.Visible = false
+end)
+
+----------------------------------------------------------------------
+-- State
+----------------------------------------------------------------------
+
+local function refreshAffordable(cash)
+	for id, button in pairs(priceButtons) do
+		local info = HotDogData.ById[id]
+		local affordable = cash >= info.Price
+		button.BackgroundColor3 = affordable and Color3.fromRGB(56, 140, 86) or Color3.fromRGB(70, 74, 88)
+		button.TextTransparency = affordable and 0 or 0.35
+	end
+end
+
+local function watchCash()
+	local stats = player:WaitForChild("leaderstats")
+	local cash = stats:WaitForChild("Cash")
+
+	local function update()
+		cashLabel.Text = "$" .. HotDogData.Comma(cash.Value)
+		refreshAffordable(cash.Value)
+	end
+
+	cash.Changed:Connect(update)
+	update()
+end
+
+local function updateIncome()
+	local income = player:GetAttribute("Income") or 0
+	rateLabel.Text = "+$" .. HotDogData.Comma(income) .. " / sec"
+end
+
+local function updateCarrying()
+	local carrying = player:GetAttribute("Carrying")
+	if carrying and carrying ~= "" then
+		banner.Visible = true
+		banner.Text = "Carrying " .. carrying .. " - get it to your DROP OFF pad!"
+	else
+		banner.Visible = false
+	end
+end
+
+task.spawn(watchCash)
+player:GetAttributeChangedSignal("Income"):Connect(updateIncome)
+player:GetAttributeChangedSignal("Carrying"):Connect(updateCarrying)
+updateIncome()
+updateCarrying()
+
+Notify.OnClientEvent:Connect(function(message, kind)
+	toast(message, kind)
+end)
+]]></ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Players" referent="RBX17">
+    <Properties>
+      <string name="Name">Players</string>
+      <bool name="CharacterAutoLoads">true</bool>
+      <float name="RespawnTime">4.0</float>
+    </Properties>
+  </Item>
+</roblox>
