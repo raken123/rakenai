@@ -4,3 +4,6 @@ data/
 desktop/app/
 desktop/dist/
 desktop/config.json
+
+# Generated media artifacts
+*.mp4
