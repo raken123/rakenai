@@ -158,6 +158,7 @@ function HotDogs.Place(model, plot, slot)
 	end
 
 	Plots.Refresh(plot)
+	Plots.OnChanged(plot)
 	return true
 end
 
@@ -167,6 +168,7 @@ local function unplace(model)
 	if plot and slot and plot.Slots[slot] == model then
 		plot.Slots[slot] = nil
 		Plots.Refresh(plot)
+		Plots.OnChanged(plot)
 	end
 	model:SetAttribute("PlotIndex", 0)
 	model:SetAttribute("Slot", 0)

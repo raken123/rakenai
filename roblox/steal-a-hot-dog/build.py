@@ -149,6 +149,8 @@ def build_tree():
                 [p_string("Name", "Remotes")],
                 [
                     Item("RemoteEvent", [p_string("Name", "BuyHotDog")]),
+                    Item("RemoteEvent", [p_string("Name", "SellHotDog")]),
+                    Item("RemoteEvent", [p_string("Name", "BaseUpdate")]),
                     Item("RemoteEvent", [p_string("Name", "Notify")]),
                 ],
             ),

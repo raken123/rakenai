@@ -148,6 +148,13 @@ for index, info in ipairs(HotDogData.List) do
 	end
 end
 
+-- Selling a hot dog refunds this share of its cash price.
+HotDogData.SellRate = 0.5
+
+function HotDogData.SellValue(info)
+	return math.max(1, math.floor(info.Price * HotDogData.SellRate))
+end
+
 local SUFFIXES = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx" }
 
 -- 1234567 -> "1.2M"

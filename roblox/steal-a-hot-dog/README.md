@@ -26,6 +26,10 @@ To publish: **File -> Publish to Roblox As...**
   pick up (3s for a Hot Dog, 12s for a Silver Hot Dog).
 - Carry it back and run over your green **DROP OFF** pad to plant it on a free
   pedestal. It pays you from then on.
+- The **SELL** button lists everything standing on your base and sells it back
+  for **50%** of its cash price — handy for clearing a pedestal when your base
+  is full, or for cashing out a stolen hot dog. Stolen ones sell for the same
+  50% of the shop price, so a good raid is still pure profit.
 - Die while carrying one and it drops on the floor — anybody can grab it.
 - Hold **E** on the blue pillar in your base to raise the shield: 20 seconds of
   no stealing, then a 45 second recharge. The shield seals the base, so you are
@@ -47,7 +51,8 @@ To publish: **File -> Publish to Roblox As...**
 | Inverted Hot Dog | $690,000 | $19,000/sec | 10,000 |
 | Silver Hot Dog | $6,000,000 | $100,000/sec | 50,000 |
 
-Players start with $25, enough for their first Hot Dog.
+Players start with $25, enough for their first Hot Dog. Every hot dog sells back
+for half its cash price (a Hot Dog returns $10, a Silver Hot Dog $3,000,000).
 
 ## Turning on the Robux purchases
 
@@ -73,12 +78,12 @@ src/
   ReplicatedStorage/
     HotDogData.lua               # the catalogue + number formatting (shared)
   ServerScriptService/
-    Main.server.lua              # leaderstats, buying, income tick, saving, receipts
+    Main.server.lua              # leaderstats, buying, selling, income tick, saving, receipts
     Modules/
       Plots.lua                  # map + base building, ownership, shields
       HotDogs.lua                # hot dog models, stealing, carrying, drop off
   StarterPlayerScripts/
-    Client.client.lua            # HUD, shop, toasts, carry banner
+    Client.client.lua            # HUD, shop, sell panel, toasts, carry banner
 ```
 
 Edit the Lua under `src/`, then rebuild:
@@ -99,3 +104,4 @@ edit them in Studio and copy changes back.
 | Number of bases, pedestals per base | `PLOT_COUNT`, `PEDESTAL_COUNT` in `Plots.lua` |
 | Shield duration and cooldown | `Plots.LockDuration`, `Plots.LockCooldown` |
 | Starting cash | `STARTING_CASH` in `Main.server.lua` |
+| Sell refund rate | `HotDogData.SellRate` in `HotDogData.lua` |

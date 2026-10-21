@@ -22,6 +22,10 @@ Plots.LockCooldown = 45
 local plots = {}
 Plots.All = plots
 
+-- Assigned by Main. Fired whenever the hot dogs standing on a plot change,
+-- so the owner's sell panel can be refreshed.
+Plots.OnChanged = function(_plot) end
+
 local function newPart(props)
 	local part = Instance.new("Part")
 	part.Anchored = true

@@ -1,6 +1,6 @@
 --[[
 	Steal a Hot Dog - client interface.
-	Builds the HUD, the shop and the notification toasts in code.
+	Builds the HUD, the shop, the sell panel and the notification toasts in code.
 --]]
 
 local Players = game:GetService("Players")
@@ -12,6 +12,8 @@ local player = Players.LocalPlayer
 local HotDogData = require(ReplicatedStorage:WaitForChild("HotDogData"))
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local BuyHotDog = Remotes:WaitForChild("BuyHotDog")
+local SellHotDog = Remotes:WaitForChild("SellHotDog")
+local BaseUpdate = Remotes:WaitForChild("BaseUpdate")
 local Notify = Remotes:WaitForChild("Notify")
 
 local DARK = Color3.fromRGB(24, 26, 34)
@@ -163,69 +165,117 @@ local function toast(message, kind)
 end
 
 ----------------------------------------------------------------------
+-- Panels
+----------------------------------------------------------------------
+
+local panels = {}
+
+local function makePanel(titleText, subtitleText)
+	local panel = Instance.new("Frame")
+	panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	panel.Position = UDim2.fromScale(0.5, 0.5)
+	panel.Size = UDim2.fromOffset(640, 520)
+	panel.BackgroundColor3 = PANEL
+	panel.BorderSizePixel = 0
+	panel.Visible = false
+	panel.Parent = screen
+	corner(panel, 16)
+	stroke(panel, ACCENT, 2)
+
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(1, -80, 0, 32)
+	title.Position = UDim2.fromOffset(20, 14)
+	title.Font = Enum.Font.GothamBold
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = ACCENT
+	title.TextSize = 26
+	title.Text = titleText
+	title.Parent = panel
+
+	local subtitle = Instance.new("TextLabel")
+	subtitle.BackgroundTransparency = 1
+	subtitle.Size = UDim2.new(1, -80, 0, 18)
+	subtitle.Position = UDim2.fromOffset(20, 44)
+	subtitle.Font = Enum.Font.GothamMedium
+	subtitle.TextXAlignment = Enum.TextXAlignment.Left
+	subtitle.TextColor3 = Color3.fromRGB(175, 180, 195)
+	subtitle.TextSize = 14
+	subtitle.Text = subtitleText
+	subtitle.Parent = panel
+
+	local close = Instance.new("TextButton")
+	close.AnchorPoint = Vector2.new(1, 0)
+	close.Position = UDim2.new(1, -16, 0, 16)
+	close.Size = UDim2.fromOffset(38, 38)
+	close.BackgroundColor3 = Color3.fromRGB(58, 62, 76)
+	close.BorderSizePixel = 0
+	close.Font = Enum.Font.GothamBold
+	close.TextSize = 20
+	close.TextColor3 = TEXT
+	close.Text = "X"
+	close.Parent = panel
+	corner(close, 10)
+	close.Activated:Connect(function()
+		panel.Visible = false
+	end)
+
+	local list = Instance.new("ScrollingFrame")
+	list.Position = UDim2.fromOffset(16, 72)
+	list.Size = UDim2.new(1, -32, 1, -90)
+	list.BackgroundTransparency = 1
+	list.BorderSizePixel = 0
+	list.ScrollBarThickness = 6
+	list.CanvasSize = UDim2.new()
+	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	list.Parent = panel
+
+	local layout = Instance.new("UIListLayout")
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 8)
+	layout.Parent = list
+
+	table.insert(panels, panel)
+	return panel, list
+end
+
+local function showPanel(target)
+	local makeVisible = not target.Visible
+	for _, panel in ipairs(panels) do
+		panel.Visible = (panel == target) and makeVisible
+	end
+end
+
+local function sideButton(text, y, color, textColor)
+	local button = Instance.new("TextButton")
+	button.Position = UDim2.fromOffset(18, y)
+	button.Size = UDim2.fromOffset(170, 48)
+	button.BackgroundColor3 = color
+	button.BorderSizePixel = 0
+	button.Font = Enum.Font.GothamBold
+	button.TextSize = 20
+	button.TextColor3 = textColor
+	button.Text = text
+	button.Parent = screen
+	corner(button, 12)
+	return button
+end
+
+----------------------------------------------------------------------
 -- Shop
 ----------------------------------------------------------------------
 
-local shop = Instance.new("Frame")
-shop.Name = "Shop"
-shop.AnchorPoint = Vector2.new(0.5, 0.5)
-shop.Position = UDim2.fromScale(0.5, 0.5)
-shop.Size = UDim2.fromOffset(640, 520)
-shop.BackgroundColor3 = PANEL
-shop.BorderSizePixel = 0
-shop.Visible = false
-shop.Parent = screen
-corner(shop, 16)
-stroke(shop, ACCENT, 2)
-
-local shopTitle = Instance.new("TextLabel")
-shopTitle.BackgroundTransparency = 1
-shopTitle.Size = UDim2.new(1, -24, 0, 48)
-shopTitle.Position = UDim2.fromOffset(20, 12)
-shopTitle.Font = Enum.Font.GothamBold
-shopTitle.TextXAlignment = Enum.TextXAlignment.Left
-shopTitle.TextColor3 = ACCENT
-shopTitle.TextSize = 26
-shopTitle.Text = "HOT DOG SHOP"
-shopTitle.Parent = shop
-
-local closeButton = Instance.new("TextButton")
-closeButton.AnchorPoint = Vector2.new(1, 0)
-closeButton.Position = UDim2.new(1, -16, 0, 16)
-closeButton.Size = UDim2.fromOffset(38, 38)
-closeButton.BackgroundColor3 = Color3.fromRGB(58, 62, 76)
-closeButton.BorderSizePixel = 0
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextSize = 20
-closeButton.TextColor3 = TEXT
-closeButton.Text = "X"
-closeButton.Parent = shop
-corner(closeButton, 10)
-
-local list = Instance.new("ScrollingFrame")
-list.Position = UDim2.fromOffset(16, 66)
-list.Size = UDim2.new(1, -32, 1, -84)
-list.BackgroundTransparency = 1
-list.BorderSizePixel = 0
-list.ScrollBarThickness = 6
-list.CanvasSize = UDim2.new()
-list.AutomaticCanvasSize = Enum.AutomaticSize.Y
-list.Parent = shop
-
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 8)
-listLayout.Parent = list
+local shop, shopList = makePanel("HOT DOG SHOP", "Buy a hot dog and it starts paying you every second.")
 
 local priceButtons = {}
 
-local function buildRow(info)
+local function buildShopRow(info)
 	local row = Instance.new("Frame")
 	row.Size = UDim2.new(1, -8, 0, 76)
 	row.BackgroundColor3 = Color3.fromRGB(42, 46, 58)
 	row.BorderSizePixel = 0
 	row.LayoutOrder = info.Index
-	row.Parent = list
+	row.Parent = shopList
 	corner(row, 12)
 	stroke(row, HotDogData.RarityColor[info.Rarity] or TEXT)
 
@@ -298,46 +348,139 @@ local function buildRow(info)
 end
 
 for _, info in ipairs(HotDogData.List) do
-	buildRow(info)
+	buildShopRow(info)
 end
 
-local shopToggle = Instance.new("TextButton")
-shopToggle.AnchorPoint = Vector2.new(0, 0)
-shopToggle.Position = UDim2.fromOffset(18, 108)
-shopToggle.Size = UDim2.fromOffset(170, 48)
-shopToggle.BackgroundColor3 = ACCENT
-shopToggle.BorderSizePixel = 0
-shopToggle.Font = Enum.Font.GothamBold
-shopToggle.TextSize = 20
-shopToggle.TextColor3 = Color3.fromRGB(28, 22, 10)
-shopToggle.Text = "SHOP"
-shopToggle.Parent = screen
-corner(shopToggle, 12)
+----------------------------------------------------------------------
+-- Sell
+----------------------------------------------------------------------
+
+local sellPanel, sellList = makePanel(
+	"SELL HOT DOGS",
+	string.format("Your base pays back %d%% of the cash price.", math.floor(HotDogData.SellRate * 100))
+)
+
+local emptyLabel = Instance.new("TextLabel")
+emptyLabel.BackgroundTransparency = 1
+emptyLabel.Size = UDim2.new(1, -8, 0, 60)
+emptyLabel.Font = Enum.Font.GothamMedium
+emptyLabel.TextSize = 16
+emptyLabel.TextColor3 = Color3.fromRGB(165, 170, 184)
+emptyLabel.Text = "Nothing on your base yet - buy or steal a hot dog first."
+emptyLabel.Visible = false
+emptyLabel.Parent = sellList
+
+local function buildSellRow(entry, order)
+	local info = HotDogData.ById[entry.Id]
+	if not info then
+		return
+	end
+
+	local payout = HotDogData.SellValue(info)
+
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -8, 0, 68)
+	row.BackgroundColor3 = Color3.fromRGB(42, 46, 58)
+	row.BorderSizePixel = 0
+	row.LayoutOrder = order
+	row.Parent = sellList
+	corner(row, 12)
+	stroke(row, HotDogData.RarityColor[info.Rarity] or TEXT)
+
+	local name = Instance.new("TextLabel")
+	name.BackgroundTransparency = 1
+	name.Position = UDim2.fromOffset(16, 9)
+	name.Size = UDim2.fromOffset(320, 24)
+	name.Font = Enum.Font.GothamBold
+	name.TextXAlignment = Enum.TextXAlignment.Left
+	name.TextSize = 18
+	name.TextColor3 = HotDogData.RarityColor[info.Rarity] or TEXT
+	name.Text = info.Name
+	name.Parent = row
+
+	local detail = Instance.new("TextLabel")
+	detail.BackgroundTransparency = 1
+	detail.Position = UDim2.fromOffset(16, 34)
+	detail.Size = UDim2.fromOffset(320, 22)
+	detail.Font = Enum.Font.GothamMedium
+	detail.TextXAlignment = Enum.TextXAlignment.Left
+	detail.TextSize = 14
+	detail.TextColor3 = Color3.fromRGB(175, 180, 195)
+	detail.Text = string.format("Pedestal %d  -  earning $%s / sec", entry.Slot, HotDogData.Comma(info.Income))
+	detail.Parent = row
+
+	local sell = Instance.new("TextButton")
+	sell.AnchorPoint = Vector2.new(1, 0.5)
+	sell.Position = UDim2.new(1, -14, 0.5, 0)
+	sell.Size = UDim2.fromOffset(160, 40)
+	sell.BackgroundColor3 = Color3.fromRGB(168, 78, 62)
+	sell.BorderSizePixel = 0
+	sell.Font = Enum.Font.GothamBold
+	sell.TextSize = 17
+	sell.TextColor3 = TEXT
+	sell.Text = "SELL $" .. HotDogData.Comma(payout)
+	sell.Parent = row
+	corner(sell, 10)
+
+	sell.Activated:Connect(function()
+		sell.Active = false
+		sell.Text = "SOLD"
+		SellHotDog:FireServer(entry.Slot)
+	end)
+end
+
+local function refreshSellPanel(contents)
+	for _, child in ipairs(sellList:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	emptyLabel.Visible = #contents == 0
+
+	for order, entry in ipairs(contents) do
+		buildSellRow(entry, order)
+	end
+end
+
+BaseUpdate.OnClientEvent:Connect(function(contents)
+	if type(contents) == "table" then
+		refreshSellPanel(contents)
+	end
+end)
+
+refreshSellPanel({})
+
+----------------------------------------------------------------------
+-- Side buttons
+----------------------------------------------------------------------
+
+local shopToggle = sideButton("SHOP", 108, ACCENT, Color3.fromRGB(28, 22, 10))
+shopToggle.Activated:Connect(function()
+	showPanel(shop)
+end)
+
+local sellToggle = sideButton("SELL", 164, Color3.fromRGB(168, 78, 62), TEXT)
+sellToggle.Activated:Connect(function()
+	showPanel(sellPanel)
+end)
 
 local help = Instance.new("TextLabel")
 help.BackgroundColor3 = DARK
 help.BackgroundTransparency = 0.25
 help.BorderSizePixel = 0
-help.Position = UDim2.fromOffset(18, 166)
-help.Size = UDim2.fromOffset(250, 96)
+help.Position = UDim2.fromOffset(18, 222)
+help.Size = UDim2.fromOffset(250, 112)
 help.Font = Enum.Font.GothamMedium
 help.TextSize = 14
 help.TextColor3 = Color3.fromRGB(205, 210, 222)
 help.TextWrapped = true
 help.TextXAlignment = Enum.TextXAlignment.Left
 help.TextYAlignment = Enum.TextYAlignment.Top
-help.Text = "Buy hot dogs to earn cash every second.\nHold E on someone else's hot dog to steal it, then run it onto your green DROP OFF pad.\nHold E on your blue pillar to shield your base."
+help.Text = "Buy hot dogs to earn cash every second.\nHold E on someone else's hot dog to steal it, then run it onto your green DROP OFF pad.\nSELL cashes in anything on your base.\nHold E on your blue pillar to shield your base."
 help.Parent = screen
 corner(help, 12)
 padding(help, 10)
-
-shopToggle.Activated:Connect(function()
-	shop.Visible = not shop.Visible
-end)
-
-closeButton.Activated:Connect(function()
-	shop.Visible = false
-end)
 
 ----------------------------------------------------------------------
 -- State

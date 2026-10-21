@@ -19,6 +19,8 @@ local HotDogs = require(Modules:WaitForChild("HotDogs"))
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local BuyHotDog = Remotes:WaitForChild("BuyHotDog")
+local SellHotDog = Remotes:WaitForChild("SellHotDog")
+local BaseUpdate = Remotes:WaitForChild("BaseUpdate")
 local Notify = Remotes:WaitForChild("Notify")
 
 local STARTING_CASH = 25
@@ -43,6 +45,31 @@ local function notify(player, message, kind)
 end
 
 HotDogs.Notify = notify
+
+-- Tells the owner's sell panel what is currently standing on their base.
+local function pushBase(player)
+	local plot = Plots.Get(player)
+	if not plot then
+		BaseUpdate:FireClient(player, {})
+		return
+	end
+
+	local contents = {}
+	for slot = 1, Plots.PedestalCount do
+		local model = plot.Slots[slot]
+		if model then
+			table.insert(contents, { Slot = slot, Id = model:GetAttribute("HotDogId") })
+		end
+	end
+
+	BaseUpdate:FireClient(player, contents)
+end
+
+Plots.OnChanged = function(plot)
+	if plot.Owner then
+		pushBase(plot.Owner)
+	end
+end
 
 local function cashValue(player)
 	local stats = player:FindFirstChild("leaderstats")
@@ -189,6 +216,8 @@ local function onPlayerAdded(player)
 		onCharacterAdded(player, player.Character)
 	end
 
+	pushBase(player)
+
 	task.defer(function()
 		notify(player, "Welcome! Open the shop and buy your first hot dog.", "good")
 	end)
@@ -245,6 +274,45 @@ BuyHotDog.OnServerEvent:Connect(function(player, id)
 
 	cash.Value -= info.Price
 	grantHotDog(player, info)
+end)
+
+SellHotDog.OnServerEvent:Connect(function(player, slot)
+	if type(slot) ~= "number" then
+		return
+	end
+
+	slot = math.floor(slot)
+
+	local plot = Plots.Get(player)
+	if not plot then
+		return
+	end
+
+	local model = plot.Slots[slot]
+	if not model then
+		notify(player, "Nothing on that pedestal.", "warn")
+		return
+	end
+
+	local info = HotDogData.ById[model:GetAttribute("HotDogId")]
+	if not info then
+		return
+	end
+
+	local cash = cashValue(player)
+	if not cash then
+		return
+	end
+
+	plot.Slots[slot] = nil
+	model:Destroy()
+
+	local payout = HotDogData.SellValue(info)
+	cash.Value += payout
+
+	Plots.Refresh(plot)
+	Plots.OnChanged(plot)
+	notify(player, "Sold " .. info.Name .. " for $" .. HotDogData.Comma(payout) .. ".", "good")
 end)
 
 MarketplaceService.ProcessReceipt = function(receiptInfo)
