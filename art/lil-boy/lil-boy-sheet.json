@@ -1,0 +1,57 @@
+{
+  "image": "lil-boy-sheet-1x.png",
+  "frameWidth": 16,
+  "frameHeight": 16,
+  "animations": [
+    {
+      "name": "idle",
+      "row": 0,
+      "frames": 4
+    },
+    {
+      "name": "blink",
+      "row": 1,
+      "frames": 4
+    },
+    {
+      "name": "look around",
+      "row": 2,
+      "frames": 4
+    },
+    {
+      "name": "walk right",
+      "row": 3,
+      "frames": 4
+    },
+    {
+      "name": "walk left",
+      "row": 4,
+      "frames": 4
+    },
+    {
+      "name": "jump",
+      "row": 5,
+      "frames": 6
+    },
+    {
+      "name": "wave",
+      "row": 6,
+      "frames": 4
+    },
+    {
+      "name": "cheer",
+      "row": 7,
+      "frames": 4
+    },
+    {
+      "name": "love",
+      "row": 8,
+      "frames": 4
+    },
+    {
+      "name": "sleep",
+      "row": 9,
+      "frames": 4
+    }
+  ]
+}
