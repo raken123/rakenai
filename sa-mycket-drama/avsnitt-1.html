@@ -1,0 +1,1666 @@
+<!doctype html>
+<html lang="sv">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head>
+<body>
+<title>Så Mycket Drama</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Fredoka:wght@400;500;600;700&family=Caveat:wght@600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: en TV-spelare som scen, under den kapitel, rollista och manus i en smal spalt */
+:root {
+  --plum: #1c0e1d;
+  --plum-2: #2a1529;
+  --plum-3: #3b1f38;
+  --pink: #ff5b93;
+  --gold: #f6c453;
+  --cream: #fff3e6;
+  --muted: #c9adc0;
+  --line: #4d2a48;
+  --f-display: "Shrikhand", "Cooper Black", Georgia, serif;
+  --f-body: "Fredoka", "Nunito", system-ui, sans-serif;
+  --f-hand: "Caveat", "Comic Sans MS", cursive;
+  --f-mono: "DM Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--plum); color: var(--cream); }
+body { font-family: var(--f-body); font-size: 16px; line-height: 1.5; }
+.page {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+  display: grid; gap: 28px;
+}
+header.show { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.logo { font-family: var(--f-display); font-size: clamp(34px, 6vw, 60px); line-height: .95; margin: 0; color: var(--pink); text-shadow: 3px 3px 0 var(--gold); letter-spacing: .5px; text-wrap: balance; }
+.ep { display: grid; gap: 2px; text-align: right; }
+.ep b { font-family: var(--f-mono); font-weight: 500; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+.ep span { font-size: 20px; font-weight: 600; }
+
+/* Spelaren */
+.player { background: #000; border-radius: 14px; overflow: hidden; border: 2px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.45); }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; background: #120812; --u: 10px; user-select: none; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ov { position: absolute; pointer-events: none; }
+.vignette { inset: 0; background: radial-gradient(ellipse at center, transparent 45%, rgba(255,91,147,.55) 100%); opacity: 0; transition: opacity .6s; }
+.vignette.on { opacity: 1; }
+.loc { left: calc(var(--u)*3); top: calc(var(--u)*3); background: var(--cream); color: var(--plum); padding: calc(var(--u)*.8) calc(var(--u)*1.6); border-radius: 4px; transform: rotate(-2deg); box-shadow: 4px 4px 0 var(--pink); opacity: 0; transition: opacity .4s, transform .4s; }
+.loc.on { opacity: 1; transform: rotate(-2deg) translateY(0); }
+.loc b { display: block; font-family: var(--f-display); font-weight: 400; font-size: calc(var(--u)*2.6); line-height: 1.1; }
+.loc span { font-family: var(--f-mono); font-size: calc(var(--u)*1.4); letter-spacing: 1px; }
+.subs { left: 6%; right: 6%; bottom: calc(var(--u)*4); display: flex; justify-content: center; }
+.sub { background: rgba(20,8,20,.82); padding: calc(var(--u)*.9) calc(var(--u)*2); border-radius: calc(var(--u)*1.2); text-align: center; max-width: 100%; opacity: 0; transition: opacity .15s; }
+.sub.on { opacity: 1; }
+.sub .who { display: block; font-weight: 700; font-size: calc(var(--u)*1.6); letter-spacing: 1.5px; text-transform: uppercase; }
+.sub .txt { font-size: calc(var(--u)*2.7); font-weight: 500; line-height: 1.25; color: #fff; text-wrap: balance; }
+.card { inset: 0; display: grid; place-content: center; text-align: center; gap: calc(var(--u)*1); opacity: 0; transition: opacity .7s; }
+.card.on { opacity: 1; }
+.titlecard { background: radial-gradient(circle at 50% 45%, rgba(28,14,29,.35), rgba(28,14,29,.85)); }
+.titlecard h2, .endcard h2, .drop h2 { font-family: var(--f-display); font-weight: 400; margin: 0; color: var(--pink); text-shadow: calc(var(--u)*.5) calc(var(--u)*.5) 0 var(--gold); line-height: 1; }
+.titlecard h2 { font-size: calc(var(--u)*10); transform: rotate(-4deg); }
+.titlecard p, .endcard p { margin: 0; font-size: calc(var(--u)*2.6); font-weight: 600; color: var(--cream); }
+.titlecard small, .endcard small { font-family: var(--f-mono); font-size: calc(var(--u)*1.5); letter-spacing: 3px; text-transform: uppercase; color: var(--gold); }
+.endcard { background: var(--plum); }
+.endcard h2 { font-size: calc(var(--u)*7); }
+.drop h2 { font-size: calc(var(--u)*9); white-space: nowrap; transform: rotate(-6deg) scale(.6); transition: transform .35s cubic-bezier(.2,1.6,.4,1); }
+.drop.on h2 { transform: rotate(-6deg) scale(1); animation: shake .25s 2 .35s; }
+@keyframes shake { 0%,100% { translate: 0 0; } 25% { translate: -6px 3px; } 75% { translate: 6px -3px; } }
+.phone { left: 50%; top: 50%; width: calc(var(--u)*34); transform: translate(-50%,-50%) scale(.9); opacity: 0; transition: opacity .3s, transform .3s; background: #f7f1f6; color: #241424; border-radius: calc(var(--u)*2); padding: calc(var(--u)*1.6); box-shadow: 0 calc(var(--u)*1) calc(var(--u)*4) rgba(0,0,0,.6); display: grid; gap: calc(var(--u)*.6); }
+.phone.on { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+.phone .from { font-weight: 700; font-size: calc(var(--u)*1.7); display: flex; justify-content: space-between; }
+.phone .from i { font-style: normal; font-family: var(--f-mono); font-weight: 400; color: #7a6577; }
+.phone .msg { font-size: calc(var(--u)*2.3); line-height: 1.25; background: #e9dbe7; border-radius: calc(var(--u)*1.2); padding: calc(var(--u)*1) calc(var(--u)*1.4); }
+.bigplay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(28,14,29,.25); border: 0; cursor: pointer; color: var(--cream); font: inherit; padding: 0; }
+.bigplay span { display: grid; place-items: center; width: calc(var(--u)*11); height: calc(var(--u)*11); min-width: 56px; min-height: 56px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 0 calc(var(--u)*.8) rgba(255,91,147,.35); }
+.bigplay svg { width: 42%; height: 42%; margin-left: 8%; fill: var(--cream); }
+.bigplay:focus-visible span { outline: 3px solid var(--gold); outline-offset: 4px; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--f-mono); font-size: 13px; letter-spacing: 1px; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; background: var(--plum-2); border-top: 1px solid var(--line); }
+.controls button { background: var(--plum-3); color: var(--cream); border: 1px solid var(--line); border-radius: 8px; height: 36px; min-width: 36px; padding: 0 10px; font: 600 14px var(--f-body); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.controls button:hover { border-color: var(--pink); }
+.controls button:focus-visible, .chapters button:focus-visible, .scrub input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.controls button[aria-pressed="false"] { color: var(--muted); }
+.controls button:disabled { opacity: .45; cursor: not-allowed; }
+.controls svg { width: 16px; height: 16px; fill: currentColor; }
+.time { font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.scrub { position: relative; flex: 1 1 260px; min-width: 0; height: 28px; display: flex; align-items: center; }
+.scrub input { width: 100%; accent-color: var(--pink); position: relative; z-index: 1; background: transparent; }
+.ticks { position: absolute; left: 8px; right: 8px; top: 50%; height: 14px; transform: translateY(-50%); pointer-events: none; }
+.ticks i { position: absolute; top: 0; width: 2px; height: 14px; background: var(--gold); opacity: .7; border-radius: 1px; }
+
+main.info { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; align-items: start; }
+@media (max-width: 820px) { main.info { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 600px) { .ep { text-align: left; } }
+h3 { font-family: var(--f-mono); font-weight: 500; font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); margin: 0 0 10px; }
+.chapters { list-style: none; margin: 0 0 28px; padding: 0; display: grid; gap: 6px; }
+.chapters button { width: 100%; display: grid; grid-template-columns: 52px minmax(0,1fr); gap: 10px; align-items: baseline; text-align: left; background: transparent; border: 1px solid var(--line); border-radius: 10px; color: var(--cream); padding: 10px 12px; cursor: pointer; font: inherit; }
+.chapters button:hover { border-color: var(--pink); }
+.chapters button.now { background: var(--plum-3); border-color: var(--pink); }
+.chapters .tc { font-family: var(--f-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chapters b { font-weight: 600; }
+.chapters small { display: block; color: var(--muted); font-size: 13px; }
+.cast { display: grid; gap: 10px; }
+.member { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.member:last-child { border-bottom: 0; }
+.member .dot { width: 14px; height: 14px; border-radius: 50%; margin-top: 5px; }
+.member b { font-size: 18px; font-weight: 600; }
+.member p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+.manus { background: var(--plum-2); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; max-height: 720px; overflow: auto; }
+.manus .sc { font-family: var(--f-mono); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin: 22px 0 8px; }
+.manus .sc:first-child { margin-top: 0; }
+.manus p { margin: 0 0 8px; max-width: 65ch; }
+.manus p b { font-weight: 600; letter-spacing: .5px; }
+.manus p.dir { color: var(--muted); font-style: italic; }
+.manus .t { font-family: var(--f-mono); font-size: 11px; color: var(--muted); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: 14px; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .drop.on h2 { animation: none; } * { transition-duration: .01s !important; } }
+</style>
+
+<div class="page">
+  <header class="show">
+    <h1 class="logo">Så Mycket Drama</h1>
+    <div class="ep"><b>Säsong 1 · Avsnitt 1</b><span>Lappen i skåpet</span></div>
+  </header>
+
+  <section class="player" aria-label="Avsnittsspelare">
+    <div class="stage" id="stage">
+      <canvas id="gl" aria-label="Animerad 3D-scen"></canvas>
+      <div class="ov vignette" id="ovVig"></div>
+      <div class="ov loc" id="ovLoc"><b></b><span></span></div>
+      <div class="ov card titlecard" id="ovTitle"><small>Säsong 1 · Avsnitt 1</small><h2>Så Mycket Drama</h2><p>Lappen i skåpet</p></div>
+      <div class="ov card drop" id="ovDrop"><h2>Så mycket drama!</h2></div>
+      <div class="ov phone" id="ovPhone"><div class="from">MacKenzie <i>21:41</i></div><div class="msg">Letar du efter sidan 46, Carter? 😏</div></div>
+      <div class="ov subs"><div class="sub" id="ovSub"><span class="who"></span><span class="txt"></span></div></div>
+      <div class="ov card endcard" id="ovEnd"><small>Fortsättning följer…</small><h2>Så Mycket Drama</h2><p>Nästa avsnitt: Höstbalen</p></div>
+      <div class="loading" id="loading">Bygger skolan…</div>
+      <button class="bigplay" id="bigPlay" aria-label="Spela avsnittet" hidden><span><svg viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg></span></button>
+    </div>
+    <div class="controls">
+      <button id="btnPlay" aria-label="Spela"><svg viewBox="0 0 24 24" id="icoPlay"><path d="M6 4l15 8-15 8z"/></svg></button>
+      <span class="time" id="time">0:00 / 0:00</span>
+      <div class="scrub"><div class="ticks" id="ticks"></div><input type="range" id="scrub" min="0" max="100" step="0.01" value="0" aria-label="Spola i avsnittet"></div>
+      <button id="btnSound" aria-pressed="true" title="Musik och ljudeffekter">Ljud</button>
+      <button id="btnVoice" aria-pressed="false" title="Läs repliker högt med webbläsarens svenska röst">Röster</button>
+      <button id="btnFull" title="Helskärm">Helskärm</button>
+    </div>
+  </section>
+
+  <main class="info">
+    <div>
+      <h3>Scener</h3>
+      <ol class="chapters" id="chapters"></ol>
+      <h3>Rollista</h3>
+      <div class="cast" id="cast"></div>
+    </div>
+    <div>
+      <h3>Manus</h3>
+      <div class="manus" id="manus"></div>
+      <p class="note" style="margin-top:10px">Mellanslag spelar och pausar. Pilarna spolar fem sekunder. Rösterna använder webbläsarens inbyggda talsyntes om den har svenska.</p>
+    </div>
+  </main>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===== Grundmotor: material, texturer och hjälpfunktioner =====
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const smooth = k => k * k * (3 - 2 * k);
+const easeIO = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+function lerpAngle(a, b, k) { let d = ((b - a + Math.PI) % TAU + TAU) % TAU - Math.PI; return a + d * k; }
+function hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+const GRAD = (() => {
+  const t = new THREE.DataTexture(new Uint8Array([90, 170, 255]), 3, 1, THREE.LuminanceFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t;
+})();
+const matCache = new Map();
+function toonMat(color, extra) {
+  const key = color + (extra ? JSON.stringify(extra) : '');
+  if (!extra && matCache.has(key)) return matCache.get(key);
+  const m = new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: GRAD }, extra || {}));
+  if (!extra) matCache.set(key, m);
+  return m;
+}
+const INK = new THREE.MeshBasicMaterial({ color: 0x1c0e1d, side: THREE.BackSide });
+const basic = (color, extra) => new THREE.MeshBasicMaterial(Object.assign({ color }, extra || {}));
+
+// Ett toon-mesh med "inverted hull"-kontur
+function T(geo, color, opts = {}) {
+  const m = new THREE.Mesh(geo, opts.mat || toonMat(color));
+  m.castShadow = opts.shadow !== false; m.receiveShadow = !!opts.receive;
+  if (opts.outline !== false) {
+    geo.computeBoundingSphere();
+    const r = geo.boundingSphere.radius || 1;
+    const o = new THREE.Mesh(geo, INK);
+    o.scale.setScalar(1 + (opts.ink || 0.022) / r);
+    o.position.copy(geo.boundingSphere.center).multiplyScalar(-(o.scale.x - 1));
+    m.add(o);
+  }
+  return m;
+}
+const G = {
+  box: (w, h, d) => new THREE.BoxGeometry(w, h, d),
+  sph: (r, ws = 20, hs = 14) => new THREE.SphereGeometry(r, ws, hs),
+  cyl: (rt, rb, h, s = 16) => new THREE.CylinderGeometry(rt, rb, h, s),
+  lathe: pts => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 24),
+};
+function at(obj, x, y, z) { obj.position.set(x, y, z); return obj; }
+
+// Canvas-texturer
+function canvasTex(w, h, draw, repeat) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.anisotropy = 4;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+  return t;
+}
+const FONT_D = '"Shrikhand", Georgia, serif', FONT_B = '"Fredoka", system-ui, sans-serif', FONT_H = '"Caveat", cursive';
+function wrapText(g, text, x, y, maxW, lh) {
+  const words = text.split(' '); let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (g.measureText(test).width > maxW && line) { g.fillText(line, x, y); line = w; y += lh; } else line = test;
+  }
+  g.fillText(line, x, y);
+}
+
+// Sprite-texturer för effekter
+const FX_TEX = {};
+function buildFxTextures() {
+  const mk = (name, draw) => { FX_TEX[name] = canvasTex(128, 128, draw); };
+  const heart = (g, col) => {
+    g.translate(64, 70); g.fillStyle = col; g.strokeStyle = '#1c0e1d'; g.lineWidth = 7;
+    g.beginPath(); g.moveTo(0, 38);
+    g.bezierCurveTo(-60, -2, -40, -58, 0, -26); g.bezierCurveTo(40, -58, 60, -2, 0, 38);
+    g.closePath(); g.stroke(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.ellipse(-20, -16, 9, 6, -.6, 0, TAU); g.fill();
+  };
+  mk('heart', g => heart(g, '#ff5b93'));
+  mk('heartGold', g => heart(g, '#f6c453'));
+  mk('z', g => { g.font = `700 92px ${FONT_B}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = '#1c0e1d'; g.strokeText('Z', 64, 68); g.fillStyle = '#bfe3ff'; g.fillText('Z', 64, 68); });
+  mk('spark', g => {
+    g.translate(64, 64); g.fillStyle = '#fff6c9'; g.strokeStyle = '#f6c453'; g.lineWidth = 5; g.beginPath();
+    for (let i = 0; i < 8; i++) { const r = i % 2 ? 14 : 56, a = i * Math.PI / 4; g.lineTo(Math.sin(a) * r, -Math.cos(a) * r); }
+    g.closePath(); g.stroke(); g.fill();
+  });
+  mk('bang', g => { g.font = `400 110px ${FONT_D}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 12; g.strokeStyle = '#1c0e1d'; g.strokeText('!', 64, 70); g.fillStyle = '#f6c453'; g.fillText('!', 64, 70); });
+  mk('anger', g => {
+    g.translate(64, 64); g.strokeStyle = '#e8283c'; g.lineWidth = 14; g.lineCap = 'round';
+    for (let i = 0; i < 4; i++) { g.save(); g.rotate(i * Math.PI / 2); g.beginPath(); g.moveTo(10, 14); g.quadraticCurveTo(14, 40, 40, 44); g.stroke(); g.restore(); }
+  });
+  mk('sweat', g => { g.translate(64, 64); g.fillStyle = '#8fd3ff'; g.strokeStyle = '#1c0e1d'; g.lineWidth = 6; g.beginPath(); g.moveTo(0, -46); g.bezierCurveTo(30, 0, 34, 40, 0, 44); g.bezierCurveTo(-34, 40, -30, 0, 0, -46); g.stroke(); g.fill(); });
+  mk('zap', g => { g.translate(64, 64); g.fillStyle = '#ffe14d'; g.strokeStyle = '#1c0e1d'; g.lineWidth = 6; g.beginPath(); g.moveTo(10, -58); g.lineTo(-26, 6); g.lineTo(-2, 6); g.lineTo(-12, 58); g.lineTo(28, -10); g.lineTo(4, -10); g.closePath(); g.stroke(); g.fill(); });
+  mk('note', g => { g.translate(64, 64); g.fillStyle = '#ff5b93'; g.strokeStyle = '#1c0e1d'; g.lineWidth = 6; g.beginPath(); g.ellipse(-12, 30, 22, 16, -.4, 0, TAU); g.stroke(); g.fill(); g.fillRect(4, -50, 9, 82); g.strokeRect(4, -50, 9, 82); g.beginPath(); g.moveTo(13, -50); g.quadraticCurveTo(50, -40, 40, -6); g.lineWidth = 9; g.stroke(); });
+  mk('haha', g => { g.font = `700 54px ${FONT_B}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 8; g.strokeStyle = '#1c0e1d'; g.strokeText('HA', 64, 66); g.fillStyle = '#ffe14d'; g.fillText('HA', 64, 66); });
+  mk('bzz', g => { g.font = `700 50px ${FONT_B}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 8; g.strokeStyle = '#1c0e1d'; g.strokeText('BZZ', 64, 66); g.fillStyle = '#9ff0c8'; g.fillText('BZZ', 64, 66); });
+}
+// ===== Karaktärer =====
+const HIP = 0.565, R = 0.42;
+const CAST = {
+  stella:    { name: 'Stella',    col: '#ff7eb3', skin: '#ffd9c2', hair: '#f5d06b', top: '#ff7eb3', pants: '#ffd9c2', shoes: '#ff4f8b', scale: 0.98, dress: true, pitch: 1.35, rate: 1.05,
+               bio: 'Rik, har mycket. Kommer till skolan i rosa limousin och tycker att en privatjet på service är en kris.' },
+  lola:      { name: 'Lola',      col: '#37c8b4', skin: '#9a5f3e', hair: '#2b1a17', top: '#ffc93c', pants: '#2bb3a3', shoes: '#ffffff', scale: 0.96, pitch: 1.2, rate: 1.05,
+               bio: 'Stellas BFF. De hänger jämt. Snabb i käften, har koll på allt och märker det ingen annan märker.' },
+  mackenzie: { name: 'MacKenzie', col: '#ff8a5c', skin: '#ffe0cf', hair: '#d9452b', top: '#2a2430', pants: '#3b4a6b', shoes: '#1d1a22', scale: 1.0, pitch: 0.9, rate: 1.0,
+               bio: 'Skolans mobbare. Hackar mest på Stella och Lola. Tuggar alltid jordgubbstuggummi.' },
+  carter:    { name: 'Carter',    col: '#7fb8ff', skin: '#f2c6a0', hair: '#6b4226', top: '#27407a', sleeve: '#9fd0ff', pants: '#c9b07a', shoes: '#f4f4f4', scale: 1.04, pitch: 0.75, rate: 1.0,
+               bio: 'Gullig och smart. Alla är kär i honom och han verkar vara kär i alla. Men det är han inte. Det är hans hemlighet.' },
+  gunilla:   { name: 'Gunilla',   col: '#c7b38a', skin: '#f0cdb5', hair: '#a9a4a8', top: '#c7a77e', pants: '#6f7a4a', shoes: '#5a3b26', scale: 1.08, skirt: true, pitch: 0.55, rate: 0.78,
+               bio: 'Lärare i SO. Världens tråkigaste lektioner. Har 340 bilder på grus och älskar varenda en.' },
+  ex1: { name: 'Elev', extra: true, skin: '#f4c9a8', hair: '#3a2a20', top: '#ff9f43', pants: '#3d5a80', shoes: '#222', scale: 0.97, hairStyle: 'short' },
+  ex2: { name: 'Elev', extra: true, skin: '#c58b62', hair: '#1a1210', top: '#7bd389', pants: '#5b4b8a', shoes: '#eee', scale: 0.95, hairStyle: 'bob' },
+  ex3: { name: 'Elev', extra: true, skin: '#ffe3d1', hair: '#e8b04a', top: '#b48cff', pants: '#2f3e46', shoes: '#c33', scale: 1.0, hairStyle: 'pony' },
+};
+
+function hairCap(col, tilt = -0.35, cover = 0.56, s = 1.07) {
+  const m = T(new THREE.SphereGeometry(R * s, 26, 16, 0, TAU, 0, Math.PI * cover), col);
+  m.rotation.x = tilt; return m;
+}
+
+function buildHair(id, d, head) {
+  const h = d.hair;
+  if (id === 'stella') {
+    head.add(hairCap(h, -0.42, 0.55));
+    const back = at(T(G.sph(R * 1.02), h), 0, -0.12, -0.12); back.scale.set(1.12, 1.35, 0.9); head.add(back);
+    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) {
+      const l = at(T(G.sph(0.13), h), sx * (0.36 + i * 0.02), -0.18 - i * 0.2, 0.02 - i * 0.04); l.scale.set(0.8, 1.1, 0.9); head.add(l);
+    }
+    const bang = at(T(G.sph(0.2), h), 0.12, 0.3, 0.26); bang.scale.set(1.5, 0.55, 0.7); bang.rotation.z = -0.3; head.add(bang);
+    // tiara
+    const tia = at(T(new THREE.TorusGeometry(0.3, 0.025, 6, 24, Math.PI), '#f6c453'), 0, 0.3, 0.06); tia.rotation.x = -0.5; head.add(tia);
+    for (const x of [-0.14, 0, 0.14]) { const c = at(T(G.cyl(0, 0.04, x ? 0.1 : 0.15, 6), '#f6c453'), x, 0.47 + (x ? 0 : 0.03), 0.2); c.rotation.x = -0.5; head.add(c); }
+    head.add(at(T(G.sph(0.035), '#ff4f8b', { outline: false }), 0, 0.5, 0.25));
+  } else if (id === 'lola') {
+    head.add(hairCap(h, -0.3, 0.56));
+    for (const sx of [-1, 1]) {
+      const b = at(T(G.sph(0.19), h), sx * 0.25, 0.38, -0.05); head.add(b);
+      const ring = at(T(new THREE.TorusGeometry(0.075, 0.02, 6, 16), '#f6c453', { outline: false }), sx * 0.43, -0.24, 0.0); ring.rotation.y = Math.PI / 2; head.add(ring);
+    }
+  } else if (id === 'mackenzie') {
+    head.add(hairCap(h, -0.4, 0.5));
+    const bang = at(T(G.sph(0.2), h), -0.15, 0.37, 0.2); bang.scale.set(1.5, 0.5, 0.6); bang.rotation.z = 0.35; head.add(bang);
+    const tie = at(T(G.sph(0.11), h), 0, 0.36, -0.3); head.add(tie);
+    for (let i = 0; i < 4; i++) { const p = at(T(G.sph(0.13 - i * 0.02), h), 0, 0.32 - i * 0.17, -0.46 - i * 0.04); p.scale.set(0.85, 1.3, 0.85); head.add(p); }
+    for (const [x, y] of [[-.2, -.06], [-.25, -.1], [-.17, -.12], [.2, -.06], [.25, -.1], [.17, -.12]]) head.add(at(new THREE.Mesh(G.sph(0.012, 6, 4), basic('#b5653b')), x, y, Math.sqrt(R * R - x * x - y * y) + 0.002));
+  } else if (id === 'carter') {
+    head.add(hairCap(h, -0.25, 0.5));
+    for (let i = 0; i < 3; i++) { const q = at(T(G.sph(0.16 - i * 0.025), h), 0.05 - i * 0.05, 0.38 + i * 0.04, 0.22 - i * 0.14); q.scale.set(1.6, 0.8, 1); q.rotation.x = -0.6; head.add(q); }
+  } else if (id === 'gunilla') {
+    head.add(hairCap(h, -0.3, 0.52));
+    const bun = at(T(G.sph(0.19), h), 0, 0.3, -0.33); head.add(bun);
+    const pen = at(T(G.cyl(0.018, 0.018, 0.5, 6), '#f6c453'), 0, 0.33, -0.36); pen.rotation.z = 1.1; head.add(pen);
+    const frame = '#6b3f22';
+    for (const sx of [-1, 1]) { const g = at(T(new THREE.TorusGeometry(0.105, 0.016, 6, 22), frame, { outline: false }), sx * 0.15, 0.04, 0.43); head.add(g);
+      const lens = at(new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), basic('#ffffff', { transparent: true, opacity: 0.25 })), sx * 0.15, 0.04, 0.432); head.add(lens); }
+    head.add(at(T(G.box(0.09, 0.02, 0.02), frame, { outline: false }), 0, 0.06, 0.43));
+  } else {
+    const st = d.hairStyle;
+    head.add(hairCap(h, -0.3, st === 'bob' ? 0.62 : 0.5));
+    if (st === 'pony') { const p = at(T(G.sph(0.14), h), 0, 0.05, -0.45); p.scale.set(0.8, 1.4, 0.8); head.add(p); }
+    if (st === 'bob') { for (const sx of [-1, 1]) { const s = at(T(G.sph(0.16), h), sx * 0.34, -0.12, -0.02); s.scale.set(0.7, 1.2, 1.1); head.add(s); } }
+  }
+}
+
+function buildChar(id) {
+  const d = CAST[id];
+  const rig = { id, d };
+  const root = rig.root = new THREE.Group();
+  const hips = rig.hips = at(new THREE.Group(), 0, HIP, 0); root.add(hips);
+  const body = rig.body = new THREE.Group(); hips.add(body);
+  // ben med knän
+  rig.thigh = []; rig.shin = [];
+  for (const sx of [1, -1]) {
+    const th = at(new THREE.Group(), sx * 0.12, 0, 0); hips.add(th);
+    const legCol = d.dress ? d.skin : d.pants;
+    th.add(at(T(G.cyl(0.085, 0.075, 0.3, 10), d.skirt ? d.pants : legCol), 0, -0.14, 0));
+    const kn = at(new THREE.Group(), 0, -0.28, 0); th.add(kn);
+    kn.add(at(T(G.cyl(0.072, 0.065, 0.24, 10), d.skirt ? d.skin : legCol), 0, -0.11, 0));
+    const shoe = at(T(G.sph(0.1, 14, 10), d.shoes), 0, -0.235, 0.04); shoe.scale.set(0.85, 0.5, 1.3); kn.add(shoe);
+    rig.thigh.push(th); rig.shin.push(kn);
+  }
+  // bål
+  if (d.dress) {
+    body.add(T(G.lathe([[0, -0.16], [0.39, -0.16], [0.36, -0.13], [0.2, 0.25], [0, 0.25]]), d.top, { mat: toonMat(d.top, { side: THREE.DoubleSide }) }));
+    body.add(T(G.lathe([[0, 0.2], [0.19, 0.2], [0.2, 0.4], [0.24, 0.58], [0.19, 0.7], [0.08, 0.76], [0, 0.77]]), d.top));
+    const belt = at(T(new THREE.TorusGeometry(0.2, 0.03, 6, 24), '#f6c453', { outline: false }), 0, 0.25, 0); belt.rotation.x = Math.PI / 2; body.add(belt);
+    for (let i = 0; i < 9; i++) { const a = -1.1 + i * 0.275; body.add(at(new THREE.Mesh(G.sph(0.022, 8, 6), toonMat('#fffaf0')), Math.sin(a) * 0.13, 0.69 - Math.cos(a) * 0.05, Math.cos(a) * 0.13 + 0.03)); }
+  } else if (d.skirt) {
+    body.add(T(G.lathe([[0, -0.42], [0.33, -0.42], [0.3, -0.35], [0.22, 0.12], [0, 0.12]]), d.pants, { mat: toonMat(d.pants, { side: THREE.DoubleSide }) }));
+    body.add(T(G.lathe([[0, 0.05], [0.24, 0.05], [0.25, 0.3], [0.27, 0.56], [0.21, 0.7], [0.08, 0.76], [0, 0.77]]), d.top));
+    for (let i = 0; i < 4; i++) body.add(at(new THREE.Mesh(G.sph(0.022, 8, 6), toonMat('#5a3b26')), 0, 0.18 + i * 0.13, 0.265));
+  } else {
+    body.add(at(T(G.cyl(0.21, 0.21, 0.16, 18), d.pants), 0, 0.02, 0));
+    body.add(T(G.lathe([[0, 0.06], [0.22, 0.06], [0.23, 0.3], [0.25, 0.56], [0.2, 0.7], [0.08, 0.76], [0, 0.77]]), d.top));
+    if (id === 'mackenzie') { body.add(at(T(G.box(0.16, 0.5, 0.05), '#8b3fd1', { outline: false }), 0, 0.38, 0.22)); for (const sx of [-1, 1]) body.add(at(T(G.box(0.05, 0.45, 0.04), '#3c3444', { outline: false }), sx * 0.1, 0.42, 0.225)); }
+    if (id === 'carter') { for (const sx of [-1, 1]) { const c = at(T(G.box(0.12, 0.06, 0.05), '#ffffff', { outline: false }), sx * 0.07, 0.71, 0.13); c.rotation.z = sx * 0.4; body.add(c); } body.add(at(T(G.box(0.05, 0.3, 0.03), '#ffffff', { outline: false }), 0, 0.53, 0.225)); }
+    if (id === 'lola') { body.add(at(T(G.box(0.3, 0.32, 0.05), d.pants, { outline: false }), 0, 0.22, 0.2)); for (const sx of [-1, 1]) body.add(at(T(G.box(0.04, 0.4, 0.03), d.pants, { outline: false }), sx * 0.12, 0.5, 0.2)); }
+  }
+  // armar
+  rig.arm = [];
+  for (const sx of [1, -1]) {
+    const a = at(new THREE.Group(), sx * 0.28, 0.63, 0); body.add(a);
+    a.add(at(T(G.cyl(0.06, 0.055, 0.46, 10), d.skin), 0, -0.25, 0));
+    a.add(at(T(G.cyl(0.08, 0.075, 0.26, 10), d.sleeve || d.top), 0, -0.1, 0));
+    const hand = at(T(G.sph(0.075, 12, 10), d.skin), 0, -0.5, 0); a.add(hand);
+    a.userData.hand = hand; rig.arm.push(a);
+  }
+  rig.handL = rig.arm[0].userData.hand; rig.handR = rig.arm[1].userData.hand;
+  if (id === 'stella') {
+    const bag = at(new THREE.Group(), 0.02, -0.2, 0.05); rig.handL.add(bag);
+    bag.add(at(T(G.box(0.3, 0.22, 0.12), '#f6c453'), 0, -0.13, 0));
+    const hd = at(T(new THREE.TorusGeometry(0.09, 0.015, 6, 16, Math.PI), '#f6c453', { outline: false }), 0, 0, 0); bag.add(hd);
+    bag.add(at(T(G.box(0.06, 0.06, 0.02), '#ff4f8b', { outline: false }), 0, -0.1, 0.065));
+  }
+  // huvud
+  const neck = at(new THREE.Group(), 0, 0.74, 0); body.add(neck);
+  neck.add(at(T(G.cyl(0.075, 0.08, 0.14, 10), d.skin, { outline: false }), 0, 0.03, 0));
+  const head = rig.head = at(new THREE.Group(), 0, 0.45, 0); neck.add(head); rig.neck = neck;
+  head.add(T(G.sph(R, 28, 20), d.skin));
+  const nose = at(T(G.sph(0.04, 10, 8), d.skin, { outline: false }), 0, -0.04, 0.41); head.add(nose);
+  for (const sx of [-1, 1]) { const ear = at(T(G.sph(0.08, 10, 8), d.skin), sx * 0.41, -0.03, 0); ear.scale.set(0.5, 1, 0.8); head.add(ear); }
+  rig.eye = []; rig.brow = [];
+  for (const sx of [-1, 1]) {
+    const e = at(new THREE.Group(), sx * 0.15, 0.03, 0.355); head.add(e);
+    const w = T(G.sph(0.088, 16, 12), '#ffffff', { ink: 0.012 }); w.scale.set(1, 1.15, 0.55); e.add(w);
+    const p = at(new THREE.Mesh(G.sph(0.052, 14, 10), basic('#22131f')), 0, -0.005, 0.035); p.scale.set(1, 1.1, 0.5); e.add(p);
+    e.add(at(new THREE.Mesh(G.sph(0.018, 8, 6), basic('#ffffff')), 0.02, 0.025, 0.06));
+    if (id === 'stella' || id === 'lola' || id === 'mackenzie') for (const k of [-1, 0, 1]) { const l = at(new THREE.Mesh(G.box(0.012, 0.05, 0.01), basic('#22131f')), sx * (0.06 + k * 0.02), 0.09 + Math.abs(k) * -0.01, 0.02); l.rotation.z = -sx * (0.4 + k * 0.3); e.add(l); }
+    rig.eye.push(e);
+    const b = at(new THREE.Mesh(G.box(0.13, 0.03, 0.03), basic(id === 'stella' ? '#b98d3a' : d.hair === '#a9a4a8' ? '#7c777b' : d.hair)), sx * 0.15, 0.17, 0.37); head.add(b); b.userData.sx = sx; rig.brow.push(b);
+  }
+  const mouth = rig.mouth = at(new THREE.Group(), 0, -0.155, 0.385); head.add(mouth);
+  const lipCol = id === 'stella' ? '#e0306f' : id === 'mackenzie' ? '#8a2a3a' : '#7a2c2c';
+  rig.mSmile = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.017, 6, 16, Math.PI), basic(lipCol)); rig.mSmile.rotation.z = Math.PI; mouth.add(rig.mSmile);
+  rig.mFrown = at(new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.017, 6, 16, Math.PI), basic(lipCol)), 0, -0.045, 0); mouth.add(rig.mFrown);
+  rig.mOpen = new THREE.Mesh(G.sph(0.07, 14, 10), basic('#6b1a2a')); mouth.add(rig.mOpen);
+  rig.mFlat = new THREE.Mesh(G.box(0.1, 0.02, 0.02), basic(lipCol)); mouth.add(rig.mFlat);
+  if (id === 'carter') { rig.teeth = at(new THREE.Mesh(G.box(0.1, 0.03, 0.02), basic('#ffffff')), 0, -0.035, 0.005); mouth.add(rig.teeth); }
+  rig.blush = [];
+  for (const sx of [-1, 1]) {
+    const c = new THREE.Mesh(new THREE.CircleGeometry(0.065, 18), basic('#ff6f9c', { transparent: true, opacity: 0.55, depthWrite: false }));
+    const v = new THREE.Vector3(sx * 0.24, -0.09, 0.335).normalize().multiplyScalar(R + 0.004);
+    c.position.copy(v); c.lookAt(v.clone().multiplyScalar(3)); head.add(c); rig.blush.push(c);
+  }
+  buildHair(id, d, head);
+  rig.acc = {};
+  if (id === 'stella') {
+    const sg = new THREE.Group(); head.add(sg); rig.acc.sunglasses = sg;
+    for (const sx of [-1, 1]) { const l = at(T(G.sph(0.115, 16, 10), '#1c0e1d', { ink: 0.012 }), sx * 0.15, 0.04, 0.39); l.scale.set(1.15, 0.85, 0.35); sg.add(l); }
+    sg.add(at(T(G.box(0.1, 0.025, 0.025), '#f6c453', { outline: false }), 0, 0.07, 0.43));
+  }
+  if (id === 'mackenzie') { rig.bubble = at(T(G.sph(0.2, 18, 14), '#ff8fc0', { ink: 0.01 }), 0, -0.04, 0.12); rig.mouth.add(rig.bubble); rig.bubble.visible = false; }
+  root.scale.setScalar(d.scale);
+  root.traverse(o => { if (o.isMesh && o.material !== INK) o.castShadow = true; });
+  return rig;
+}
+// ===== Scenografi =====
+function plane(w, h, color, opts = {}) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), opts.mat || toonMat(color));
+  m.receiveShadow = true; return m;
+}
+function floor(w, d, color, mat) { const p = plane(w, d, color, { mat }); p.rotation.x = -Math.PI / 2; return p; }
+function boxT(w, h, d, color, x, y, z, opts) { return at(T(G.box(w, h, d), color, Object.assign({ receive: true }, opts || {})), x, y, z); }
+function texMat(tex, extra) { return new THREE.MeshToonMaterial(Object.assign({ map: tex, gradientMap: GRAD }, extra || {})); }
+
+function tree(x, z, s = 1) {
+  const g = at(new THREE.Group(), x, 0, z);
+  g.add(at(T(G.cyl(0.18 * s, 0.26 * s, 2 * s, 8), '#8a5a3b'), 0, s, 0));
+  for (const [dx, dy, dz, r] of [[0, 2.5, 0, 1.25], [0.7, 2.1, 0.2, 0.85], [-0.6, 2.2, -0.2, 0.9], [0.1, 3.2, 0.1, 0.8]])
+    g.add(at(T(G.sph(r * s, 14, 10), '#5fb35a'), dx * s, dy * s, dz * s));
+  return g;
+}
+
+const SETS = {};
+const SETCTX = {};
+
+function buildYard() {
+  const g = new THREE.Group();
+  const ground = floor(90, 90, '#8fd16f'); g.add(ground);
+  const path = at(floor(2.6, 15, '#ecd6aa'), 0, 0.012, -1); g.add(path);
+  const road = at(floor(5, 90, '#5b5560'), -11, 0.01, 0); g.add(road);
+  for (let z = -40; z < 40; z += 3) g.add(at(floor(0.18, 1.5, '#fff6e0'), -11, 0.02, z));
+  g.add(at(floor(1.8, 90, '#d7cdd6'), -7.6, 0.015, 0));
+  g.add(boxT(0.25, 0.16, 90, '#bdb2bd', -8.5, 0.08, 0, { outline: false }));
+  // skolan
+  g.add(boxT(24, 6.5, 3, '#f08a7a', 0, 3.25, -10.5));
+  g.add(boxT(25, 0.6, 3.6, '#7a3b52', 0, 6.8, -10.5));
+  g.add(boxT(24.2, 0.25, 3.2, '#ffe7d6', 0, 3.3, -10.5, { outline: false }));
+  for (const y of [1.7, 4.8]) for (let i = 0; i < 8; i++) {
+    const x = -10.5 + i * 3; if (Math.abs(x) < 2.2 && y < 3) continue;
+    g.add(boxT(1.7, 1.4, 0.1, '#ffffff', x, y, -8.98, { outline: false }));
+    g.add(at(new THREE.Mesh(G.box(1.45, 1.15, 0.12), basic('#bfe6ff')), x, y, -8.95));
+    g.add(at(new THREE.Mesh(G.box(0.06, 1.15, 0.13), basic('#ffffff')), x, y, -8.94));
+  }
+  g.add(boxT(2.6, 3.0, 0.2, '#7a3b52', 0, 1.5, -8.95));
+  for (const sx of [-1, 1]) g.add(at(new THREE.Mesh(G.box(0.9, 1.6, 0.05), basic('#bfe6ff')), sx * 0.55, 1.8, -8.83));
+  g.add(boxT(4, 0.22, 1.2, '#d9c7b8', 0, 0.11, -8.4));
+  const sign = canvasTex(1024, 160, (c, w, h) => {
+    c.fillStyle = '#fff3e6'; c.fillRect(0, 0, w, h); c.strokeStyle = '#7a3b52'; c.lineWidth = 12; c.strokeRect(6, 6, w - 12, h - 12);
+    c.fillStyle = '#7a3b52'; c.font = `400 92px ${FONT_D}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Lövbergsskolan', w / 2, h / 2 + 6);
+  });
+  g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1), basic('#ffffff', { map: sign })), 0, 3.7, -8.97));
+  // träd, häck, bänk, cykelställ, lyktstolpar
+  for (const [x, z, s] of [[7.5, -5.5, 1.1], [-6.5, -6, 1], [11, 1.5, 1.2], [13, -4, 1], [-4, 12, 0.9], [13, 9, 1.1]]) g.add(tree(x, z, s));
+  for (const [x0, x1] of [[-6.8, -1.6], [1.6, 9]]) { const w = x1 - x0; g.add(boxT(w, 0.7, 0.7, '#4f9e4c', (x0 + x1) / 2, 0.35, 5.6)); }
+  const bench = at(new THREE.Group(), 4.5, 0, -5.2); g.add(bench);
+  bench.add(boxT(2, 0.12, 0.6, '#c98b4f', 0, 0.55, 0)); bench.add(boxT(2, 0.5, 0.1, '#c98b4f', 0, 0.85, -0.27));
+  for (const sx of [-1, 1]) bench.add(boxT(0.1, 0.55, 0.5, '#4a3a48', sx * 0.85, 0.27, 0));
+  for (let i = 0; i < 5; i++) { const r = at(T(new THREE.TorusGeometry(0.35, 0.04, 6, 16, Math.PI), '#9aa3b5'), -4.6 + i * 0.5, 0, -6.6); r.rotation.y = Math.PI / 2; g.add(r); }
+  for (const x of [-7.2, 9.6]) { g.add(boxT(0.12, 3.2, 0.12, '#3d3346', x, 1.6, -3, { outline: false })); g.add(at(T(G.sph(0.25, 12, 8), '#fff2b8'), x, 3.3, -3)); }
+  // limousinen
+  const limo = new THREE.Group(); g.add(limo);
+  const lc = '#ff9cc8';
+  limo.add(boxT(2, 0.8, 7.4, lc, 0, 0.7, 0));
+  limo.add(boxT(1.8, 0.65, 4.6, lc, 0, 1.4, -0.3));
+  limo.add(at(new THREE.Mesh(G.box(1.84, 0.42, 4.3), basic('#2c1f3a')), 0, 1.42, -0.3));
+  limo.add(at(new THREE.Mesh(G.box(2.04, 0.08, 7.3), toonMat('#f6c453')), 0, 0.85, 0));
+  limo.add(at(T(G.sph(0.09), '#f6c453'), 0, 1.15, -3.6));
+  for (const sx of [-1, 1]) { limo.add(at(new THREE.Mesh(G.box(0.4, 0.18, 0.05), basic('#fffbe0')), sx * 0.65, 0.75, -3.72)); limo.add(at(new THREE.Mesh(G.box(0.4, 0.14, 0.05), basic('#ff3b6b')), sx * 0.65, 0.75, 3.72)); }
+  const wheels = [];
+  for (const sx of [-1, 1]) for (const z of [-2.6, 2.6]) {
+    const w = at(T(G.cyl(0.38, 0.38, 0.3, 16), '#231a26'), sx * 0.98, 0.38, z); w.rotation.z = Math.PI / 2; limo.add(w);
+    w.add(at(new THREE.Mesh(G.cyl(0.2, 0.2, 0.32, 12), toonMat('#f6c453')), 0, 0, 0)); wheels.push(w);
+  }
+  SETCTX.limo = limo; SETCTX.limoWheels = wheels;
+  return g;
+}
+
+function lockerTex(base) {
+  return canvasTex(128, 256, (c, w, h) => {
+    c.fillStyle = base; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(0,0,0,.22)'; for (let i = 0; i < 5; i++) c.fillRect(30, 26 + i * 12, 68, 5);
+    for (let i = 0; i < 5; i++) c.fillRect(30, 196 + i * 10, 68, 4);
+    c.fillStyle = '#d6d6dc'; c.fillRect(96, 116, 12, 34);
+    c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 4; c.strokeRect(2, 2, w - 4, h - 4);
+  });
+}
+function buildCorridor() {
+  const g = new THREE.Group();
+  const tiles = canvasTex(256, 256, (c, w, h) => { for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { c.fillStyle = (x + y) % 2 ? '#f4ead2' : '#5fb7ad'; c.fillRect(x * 64, y * 64, 64, 64); } }, [6, 3]);
+  g.add(floor(24, 12, null, texMat(tiles)));
+  g.add(at(plane(24, 4.4, '#f3e6c8'), 0, 2.2, -3));
+  for (const sx of [-1, 1]) { const w = at(plane(12, 4.4, '#f3e6c8'), sx * 11, 2.2, 3); w.rotation.y = -sx * Math.PI / 2; g.add(w); }
+  const ceil = at(plane(24, 12, '#fff8ea'), 0, 4.4, 3); ceil.rotation.x = Math.PI / 2; g.add(ceil);
+  for (const x of [-7, 0, 7]) g.add(at(new THREE.Mesh(G.box(2.4, 0.08, 0.7), basic('#fffbe8')), x, 4.36, 1));
+  g.add(at(plane(24, 0.9, '#5fb7ad'), 0, 0.45, -2.99));
+  const tA = lockerTex('#3fb6a8'), tB = lockerTex('#2e9c90');
+  const mA = texMat(tA), mB = texMat(tB);
+  SETCTX.lockers = {};
+  let i = 0;
+  for (let x = -9.6; x <= 9.7; x += 0.86, i++) {
+    if (Math.abs(x) < 1.6 || Math.abs(x - 7.2) < 0.7) continue;
+    g.add(boxT(0.84, 2.5, 0.56, '#2a7f76', x, 1.25, -2.7, { outline: false }));
+    const pivot = at(new THREE.Group(), x - 0.4, 1.25, -2.41); g.add(pivot);
+    const door = at(new THREE.Mesh(G.box(0.8, 2.42, 0.04), i % 2 ? mA : mB), 0.4, 0, 0); door.castShadow = true; pivot.add(door);
+    const key = Math.abs(x + 3.44) < 0.3 ? 'stella' : Math.abs(x - 3.44) < 0.3 ? 'lola' : null;
+    if (key) {
+      SETCTX.lockers[key] = pivot; pivot.userData.x = x;
+      g.add(at(new THREE.Mesh(G.box(0.7, 2.3, 0.05), basic('#16302d')), x, 1.25, -2.43));
+      const st = canvasTex(128, 128, c => c.drawImage(FX_TEX[key === 'stella' ? 'spark' : 'heart'].image, 0, 0));
+      const s = at(new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), basic('#ffffff', { map: st, transparent: true })), 0.4, 0.62, 0.025); pivot.add(s);
+    }
+  }
+  const poster = canvasTex(512, 700, (c, w, h) => {
+    c.fillStyle = '#ff5b93'; c.fillRect(0, 0, w, h); c.fillStyle = '#f6c453';
+    for (let k = 0; k < 40; k++) { c.beginPath(); c.arc(hash(k) * w, hash(k + 9) * h, 4 + hash(k + 3) * 8, 0, TAU); c.fill(); }
+    c.fillStyle = '#fff3e6'; c.textAlign = 'center'; c.font = `400 120px ${FONT_D}`; c.fillText('Höstbal', w / 2, 230);
+    c.font = `700 64px ${FONT_B}`; c.fillStyle = '#1c0e1d'; c.fillText('FREDAG 19.00', w / 2, 360);
+    c.font = `600 44px ${FONT_B}`; c.fillText('i aulan', w / 2, 430);
+    c.font = `700 70px ${FONT_H}`; c.fillStyle = '#fff3e6'; c.fillText('Ta med din dejt!', w / 2, 560);
+  });
+  g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(1.9, 2.6), basic('#ffffff', { map: poster })), 0, 2.0, -2.97));
+  g.add(boxT(0.9, 4.4, 0.9, '#e8d7b5', 7.2, 2.2, -2.3));
+  g.add(at(T(G.cyl(0.32, 0.28, 0.9, 14), '#7a3b52'), -10, 0.45, -2.2));
+  return g;
+}
+
+const BOARD = {};
+function buildBoards() {
+  const mk = draw => canvasTex(1024, 380, (c, w, h) => {
+    c.fillStyle = '#2f5442'; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(255,255,255,.05)'; for (let k = 0; k < 30; k++) c.fillRect(hash(k) * w, hash(k + 4) * h, 120, 10);
+    c.fillStyle = '#f4f4ea'; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; draw(c, w, h);
+  });
+  BOARD.lesson = mk(c => {
+    c.font = `700 78px ${FONT_H}`; c.fillText('Lektion 14: Grus', 50, 100);
+    c.font = `600 50px ${FONT_H}`; c.fillText('Småländska grusvägar 1600–1750', 50, 180);
+    c.fillText('1. Vad är grus?   2. Var ligger grus?', 50, 255); c.fillText('3. Varför ligger grus?', 50, 325);
+  });
+  const pebble = (c, cx, cy, s) => { c.fillStyle = '#9a9a96'; c.beginPath(); c.ellipse(cx, cy, 120 * s, 80 * s, 0.2, 0, TAU); c.fill(); c.fillStyle = '#b8b8b2'; c.beginPath(); c.ellipse(cx - 30 * s, cy - 25 * s, 40 * s, 22 * s, 0.2, 0, TAU); c.fill(); };
+  BOARD.slide1 = mk((c, w) => { c.fillStyle = '#efe9d8'; c.fillRect(260, 30, 500, 300); pebble(c, 510, 175, 1); c.fillStyle = '#f4f4ea'; c.font = `600 48px ${FONT_H}`; c.fillText('Bild 1 av 340', 790, 90); c.fillText('Grus.', 790, 160); });
+  BOARD.slide2 = mk((c, w) => { c.fillStyle = '#efe9d8'; c.fillRect(260, 30, 500, 300); pebble(c, 520, 180, 1.02); c.fillStyle = '#f4f4ea'; c.font = `600 48px ${FONT_H}`; c.fillText('Bild 2 av 340', 790, 90); c.fillText('Också grus.', 790, 160); });
+  BOARD.homework = mk(c => { c.font = `700 78px ${FONT_H}`; c.fillText('Läxa till imorgon:', 50, 120); c.font = `600 60px ${FONT_H}`; c.fillText('Kapitel 12. Grus, del två.', 50, 220); c.fillText('(Det blir spännande.)', 50, 300); });
+}
+
+function buildClassroom() {
+  const g = new THREE.Group();
+  const wood = canvasTex(256, 256, (c, w, h) => { for (let k = 0; k < 8; k++) { c.fillStyle = k % 2 ? '#c98f5b' : '#bf8452'; c.fillRect(0, k * 32, w, 32); c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect((k * 97) % w, k * 32, 3, 32); c.fillRect(0, k * 32, w, 2); } }, [4, 4]);
+  g.add(floor(16, 14, null, texMat(wood)));
+  g.add(at(plane(16, 4.6, '#dfe8c9'), 0, 2.3, -5));
+  g.add(at(plane(16, 1.1, '#9fb38a'), 0, 0.55, -4.99));
+  for (const sx of [-1, 1]) { const w = at(plane(14, 4.6, '#dfe8c9'), sx * 7, 2.3, 2); w.rotation.y = -sx * Math.PI / 2; g.add(w); }
+  const back = at(plane(16, 4.6, '#dfe8c9'), 0, 2.3, 7); back.rotation.y = Math.PI; g.add(back);
+  const ceil = at(plane(16, 14, '#fbf8ee'), 0, 4.6, 2); ceil.rotation.x = Math.PI / 2; g.add(ceil);
+  SETCTX.windows = [];
+  for (const z of [-2.5, 0.8, 4.1]) {
+    const f = boxT(0.12, 2.0, 2.2, '#ffffff', -6.95, 2.3, z, { outline: false }); g.add(f);
+    const glass = at(new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.7), basic('#bfe6ff')), -6.87, 2.3, z); glass.rotation.y = Math.PI / 2; g.add(glass); SETCTX.windows.push(glass);
+    g.add(at(new THREE.Mesh(G.box(0.14, 1.7, 0.06), basic('#ffffff')), -6.86, 2.3, z));
+  }
+  g.add(boxT(6.4, 2.6, 0.12, '#8a5a3b', 0, 2.2, -4.92));
+  buildBoards();
+  const board = at(new THREE.Mesh(new THREE.PlaneGeometry(6, 2.2), basic('#ffffff', { map: BOARD.lesson })), 0, 2.2, -4.85); g.add(board); SETCTX.board = board;
+  g.add(boxT(6.2, 0.08, 0.2, '#8a5a3b', 0, 0.92, -4.8));
+  const face = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#fffdf5'; c.beginPath(); c.arc(128, 128, 122, 0, TAU); c.fill(); c.lineWidth = 10; c.strokeStyle = '#1c0e1d'; c.stroke(); c.fillStyle = '#1c0e1d'; for (let k = 0; k < 12; k++) { const a = k * TAU / 12; c.fillRect(128 + Math.sin(a) * 100 - 4, 128 - Math.cos(a) * 100 - 4, 8, 8); } });
+  const clock = at(new THREE.Group(), 4.8, 3.4, -4.93); g.add(clock);
+  clock.add(new THREE.Mesh(new THREE.CircleGeometry(0.5, 28), basic('#ffffff', { map: face })));
+  const hand = (len, wid, col) => { const p = new THREE.Group(); p.add(at(new THREE.Mesh(G.box(wid, len, 0.01), basic(col)), 0, len / 2 - 0.04, 0.01)); clock.add(p); return p; };
+  SETCTX.clockH = hand(0.24, 0.05, '#1c0e1d'); SETCTX.clockM = hand(0.36, 0.035, '#1c0e1d'); SETCTX.clockS = hand(0.4, 0.015, '#e8283c');
+  const gp = canvasTex(400, 560, (c, w, h) => { c.fillStyle = '#fff3e6'; c.fillRect(0, 0, w, h); c.fillStyle = '#7a3b52'; c.textAlign = 'center'; c.font = `400 76px ${FONT_D}`; c.fillText('GRUS', w / 2, 120); c.font = `600 34px ${FONT_B}`; c.fillText('Sveriges grund', w / 2, 175); for (let k = 0; k < 26; k++) { c.fillStyle = ['#9a9a96', '#b8b8b2', '#7f7f7a'][k % 3]; c.beginPath(); c.ellipse(60 + hash(k) * 280, 240 + hash(k + 5) * 280, 14 + hash(k + 2) * 18, 10 + hash(k + 8) * 12, hash(k) * 3, 0, TAU); c.fill(); } });
+  g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.8), basic('#ffffff', { map: gp })), -4.9, 2.4, -4.95));
+  g.add(boxT(2.4, 0.9, 1.1, '#9b6a44', 2.6, 0.45, -3.4));
+  g.add(at(T(G.cyl(0.08, 0.07, 0.18, 12), '#ffffff'), 2.0, 0.99, -3.3));
+  g.add(boxT(0.6, 0.12, 0.45, '#fff8e8', 3.0, 0.96, -3.4, { outline: false }));
+  SETCTX.seats = {};
+  for (const [row, z] of [[0, -0.7], [1, 1.9]]) for (const x of [-2.7, 0, 2.7]) {
+    g.add(boxT(1.3, 0.07, 0.8, '#e2b07a', x, 0.86, z));
+    for (const [dx, dz] of [[-0.58, -0.33], [0.58, -0.33], [-0.58, 0.33], [0.58, 0.33]]) g.add(at(T(G.cyl(0.03, 0.03, 0.83, 6), '#4a3a48', { outline: false }), x + dx, 0.42, z + dz));
+    g.add(boxT(0.6, 0.06, 0.55, '#ff8a5c', x, 0.5, z + 0.72));
+    g.add(boxT(0.6, 0.6, 0.06, '#ff8a5c', x, 0.85, z + 1.0));
+    for (const [dx, dz] of [[-0.25, 0.5], [0.25, 0.5], [-0.25, 0.95], [0.25, 0.95]]) g.add(at(T(G.cyl(0.025, 0.025, 0.5, 6), '#4a3a48', { outline: false }), x + dx, 0.25, z + dz));
+  }
+  const pot = at(new THREE.Group(), 6.2, 0, -4.2); g.add(pot);
+  pot.add(at(T(G.cyl(0.35, 0.28, 0.6, 12), '#d9826b'), 0, 0.3, 0));
+  for (const [dx, dy, r] of [[0, 1.0, 0.45], [0.25, 0.8, 0.3], [-0.2, 0.85, 0.32]]) pot.add(at(T(G.sph(r, 12, 8), '#5fb35a'), dx, dy, 0));
+  return g;
+}
+
+function buildRoom() {
+  const g = new THREE.Group();
+  g.add(floor(12, 10, '#3d4f7a'));
+  const rug = at(new THREE.Mesh(new THREE.CircleGeometry(1.6, 32), toonMat('#ffc93c')), 0.3, 0.012, 0.6); rug.rotation.x = -Math.PI / 2; rug.receiveShadow = true; g.add(rug);
+  const wall = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#4a5f96'; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(255,255,255,.18)'; for (let k = 0; k < 14; k++) { c.beginPath(); c.arc(hash(k) * w, hash(k + 2) * h, 3 + hash(k + 7) * 3, 0, TAU); c.fill(); } }, [5, 2]);
+  const wm = texMat(wall);
+  g.add(at(plane(12, 4.2, null, { mat: wm }), 0, 2.1, -3));
+  for (const sx of [-1, 1]) { const w = at(plane(10, 4.2, null, { mat: wm }), sx * 5, 2.1, 2); w.rotation.y = -sx * Math.PI / 2; g.add(w); }
+  const ceil = at(plane(12, 10, '#31406b'), 0, 4.2, 2); ceil.rotation.x = Math.PI / 2; g.add(ceil);
+  const night = canvasTex(256, 200, (c, w, h) => { const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0c1236'); gr.addColorStop(1, '#2a2f6b'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; for (let k = 0; k < 30; k++) c.fillRect(hash(k) * w, hash(k + 3) * h, 2, 2); c.fillStyle = '#fff4c2'; c.beginPath(); c.arc(185, 60, 30, 0, TAU); c.fill(); c.fillStyle = '#0f1640'; c.beginPath(); c.arc(198, 52, 26, 0, TAU); c.fill(); });
+  g.add(boxT(1.9, 1.5, 0.1, '#e8e2f0', 1.8, 2.5, -2.97, { outline: false }));
+  g.add(at(new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.3), basic('#ffffff', { map: night })), 1.8, 2.5, -2.91));
+  g.add(at(new THREE.Mesh(G.box(0.06, 1.3, 0.04), basic('#e8e2f0')), 1.8, 2.5, -2.9));
+  g.add(boxT(2.8, 0.45, 1.5, '#8a6a4a', -0.6, 0.225, -2.2));
+  g.add(boxT(2.7, 0.22, 1.42, '#f4f1ff', -0.6, 0.56, -2.2, { outline: false }));
+  g.add(boxT(2.72, 0.14, 1.05, '#4a78c2', -0.4, 0.7, -2.0));
+  g.add(boxT(0.7, 0.2, 0.9, '#ffffff', -1.6, 0.76, -2.3));
+  g.add(boxT(0.12, 1.1, 1.5, '#8a6a4a', -2.0, 0.55, -2.2));
+  g.add(boxT(0.75, 0.7, 0.6, '#c98b4f', 1.5, 0.35, -2.5));
+  g.add(at(T(G.cyl(0.14, 0.18, 0.08, 12), '#f6c453'), 1.5, 0.74, -2.55));
+  g.add(at(T(G.cyl(0.025, 0.025, 0.45, 6), '#f6c453', { outline: false }), 1.5, 0.98, -2.55));
+  const shade = at(new THREE.Mesh(G.cyl(0.14, 0.26, 0.3, 16), new THREE.MeshBasicMaterial({ color: '#fff0b0' })), 1.5, 1.28, -2.55); g.add(shade); SETCTX.shade = shade;
+  const lamp = new THREE.PointLight(0xffd59a, 1.4, 9, 1.6); lamp.position.set(1.5, 1.35, -2.3); g.add(lamp); SETCTX.lamp = lamp;
+  const desk = at(new THREE.Group(), -3.8, 0, 0); g.add(desk);
+  desk.add(boxT(1.2, 0.08, 2.2, '#c98b4f', 0, 0.9, 0));
+  for (const dz of [-1, 1]) desk.add(boxT(1.1, 0.88, 0.08, '#a8713f', 0, 0.44, dz));
+  const cage = at(new THREE.Mesh(G.box(0.8, 0.5, 0.6), new THREE.MeshBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: 0.25, depthWrite: false })), 0, 1.19, 0.3); desk.add(cage);
+  const ham = at(new THREE.Group(), 0, 1.04, 0.3); desk.add(ham); SETCTX.hamster = ham;
+  const hb = T(G.sph(0.12, 12, 10), '#e8a25a', { ink: 0.01 }); hb.scale.set(1.2, 0.9, 1); ham.add(hb);
+  for (const sx of [-1, 1]) { ham.add(at(T(G.sph(0.035, 8, 6), '#e8a25a', { ink: 0.008 }), sx * 0.07, 0.1, 0.04)); ham.add(at(new THREE.Mesh(G.sph(0.016, 6, 4), basic('#1c0e1d')), sx * 0.05, 0.03, 0.115)); }
+  desk.add(boxT(0.3, 0.4, 0.25, '#ff5b93', 0, 1.14, -0.6)); desk.add(boxT(0.28, 0.35, 0.25, '#37c8b4', 0, 1.12, -0.85));
+  const mp = canvasTex(400, 560, (c, w, h) => { c.fillStyle = '#1c0e1d'; c.fillRect(0, 0, w, h); c.fillStyle = '#7fb8ff'; c.textAlign = 'center'; c.font = `400 70px ${FONT_D}`; c.fillText('Matte-SM', w / 2, 140); c.fillStyle = '#f6c453'; c.font = `700 120px ${FONT_B}`; c.fillText('2026', w / 2, 300); c.fillStyle = '#fff3e6'; c.font = `600 44px ${FONT_B}`; c.fillText('π · ∑ · √', w / 2, 420); });
+  const mpm = at(new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.7), basic('#ffffff', { map: mp })), -4.97, 2.4, -0.2); mpm.rotation.y = Math.PI / 2; g.add(mpm);
+  return g;
+}
+// ===== Manus-DSL: allt blir händelser på en tidslinje, så att varje bildruta kan räknas fram ur tiden =====
+const SETOFF = { yard: [0, 0], corridor: [60, 0], classroom: [120, 0], room: [180, 0] };
+const VOICE_SLOW = { gunilla: 1.4 };
+
+function lastBefore(arr, t) { let r = null; for (const e of arr) { if (e.t <= t) r = e; else break; } return r; }
+function prevOf(arr, e) { const i = arr.indexOf(e); return i > 0 ? arr[i - 1] : null; }
+
+function segAt(segs, t) {
+  let best = null;
+  for (const s of segs) if (s.t0 <= t && (!best || s.t0 >= best.t0)) best = s;
+  return best;
+}
+function posFromSeg(s, t) {
+  if (!s) return null;
+  if (t >= s.t1 || s.t1 === s.t0) return { x: s.x1, z: s.z1, walking: false, dir: s.dir };
+  const k = (t - s.t0) / (s.t1 - s.t0), e = s.ease === 'lin' ? k : easeIO(k);
+  return { x: lerp(s.x0, s.x1, e), z: lerp(s.z0, s.z1, e), walking: s.walk, dir: s.dir, k };
+}
+
+class Episode {
+  constructor() { this.scenes = []; this.lines = []; this.ch = {}; this.cams = []; this.fx = []; this.sfx = []; this.flags = {}; this.props = {}; this.ovs = []; this.T = 0; }
+  chr(id) { return this.ch[id] || (this.ch[id] = { pos: [], face: [], emo: [], gest: [], pose: [], vis: [], acc: [] }); }
+  scene(meta, fn) {
+    const sc = Object.assign({}, meta, { start: this.T, present: new Set(), idx: this.scenes.length });
+    sc.off = SETOFF[meta.set];
+    this.scenes.push(sc);
+    const w = new Writer(this, sc); fn(w);
+    sc.end = this.T = sc.start + w.t + (meta.tail != null ? meta.tail : 0.8);
+    sc.dur = sc.end - sc.start;
+  }
+  finish() {
+    const byT = (a, b) => a.t - b.t;
+    for (const c of Object.values(this.ch)) { c.pos.sort((a, b) => a.t0 - b.t0); for (const k of ['face', 'emo', 'gest', 'pose', 'vis', 'acc']) c[k].sort(byT); }
+    this.lines.sort(byT); this.cams.sort(byT); this.fx.sort(byT); this.sfx.sort(byT); this.ovs.sort(byT);
+    for (const k in this.flags) this.flags[k].sort(byT);
+    for (const k in this.props) this.props[k].sort(byT);
+    this.duration = this.T;
+  }
+  sceneAt(t) { let s = this.scenes[0]; for (const sc of this.scenes) if (sc.start <= t) s = sc; return s; }
+}
+
+class Writer {
+  constructor(ep, sc) { this.ep = ep; this.sc = sc; this.t = 0; }
+  get abs() { return this.sc.start + this.t; }
+  w(x, z) { return [x + this.sc.off[0], z + this.sc.off[1]]; }
+  wait(d) { this.t += d; return this; }
+  place(id, x, z, o = {}) {
+    const c = this.ep.chr(id), t = this.abs, [wx, wz] = this.w(x, z);
+    c.pos.push({ t0: t, t1: t, x0: wx, z0: wz, x1: wx, z1: wz, walk: false });
+    c.face.push({ t, target: this.tgt(o.face != null ? o.face : 0), fade: 0 });
+    c.emo.push({ t, emo: o.emo || 'neutral' });
+    c.gest.push({ t, g: o.g || null, fade: 0 });
+    c.pose.push({ t, p: o.pose || 'stand', fade: 0, y: o.y || 0 });
+    c.vis.push({ t, v: o.hidden ? false : true });
+    c.acc.push({ t, name: 'sunglasses', on: !!o.glasses });
+    this.sc.present.add(id);
+    return this;
+  }
+  tgt(target) { return Array.isArray(target) ? this.w(target[0], target[1]) : target; }
+  move(id, x, z, o = {}) {
+    const c = this.ep.chr(id), t = this.abs, from = posFromSeg(segAt(c.pos, t), t);
+    const [wx, wz] = this.w(x, z), dist = Math.hypot(wx - from.x, wz - from.z);
+    const d = o.d || Math.max(0.5, dist / (o.speed || 1.6));
+    const dir = Math.atan2(wx - from.x, wz - from.z);
+    c.pos.push({ t0: t, t1: t + d, x0: from.x, z0: from.z, x1: wx, z1: wz, walk: o.walk !== false, dir, ease: o.ease, slow: o.slow });
+    if (o.walk !== false) c.face.push({ t: t + d, target: dir, fade: 0, auto: true });
+    if (o.wait) this.t += d;
+    return d;
+  }
+  face(id, target, fade = 0.35) { this.ep.chr(id).face.push({ t: this.abs, target: this.tgt(target), fade }); return this; }
+  emo(id, emo) { for (const i of [].concat(id)) this.ep.chr(i).emo.push({ t: this.abs, emo }); return this; }
+  gest(id, g, d) { for (const i of [].concat(id)) { const c = this.ep.chr(i); c.gest.push({ t: this.abs, g, fade: 0.3 }); if (d) c.gest.push({ t: this.abs + d, g: null, fade: 0.3 }); } return this; }
+  pose(id, p, o = {}) { for (const i of [].concat(id)) this.ep.chr(i).pose.push({ t: this.abs, p, fade: o.fade != null ? o.fade : 0.5, y: o.y || 0 }); return this; }
+  hide(id) { this.ep.chr(id).vis.push({ t: this.abs, v: false }); return this; }
+  show(id) { this.ep.chr(id).vis.push({ t: this.abs, v: true }); return this; }
+  acc(id, name, on) { this.ep.chr(id).acc.push({ t: this.abs, name, on }); return this; }
+  say(who, text, o = {}) {
+    const ids = [].concat(who);
+    const slow = Math.max(...ids.map(i => VOICE_SLOW[i] || 1));
+    const d = o.d || Math.max(1.3, (0.85 + text.length * 0.058) * slow);
+    const t = this.abs;
+    this.ep.lines.push({ t, d, who: ids, name: o.name || ids.map(i => CAST[i].name).join(' & '), text, sc: this.sc.idx });
+    if (o.emo) this.emo(ids, o.emo);
+    if (o.to) for (const i of ids) this.face(i, o.to);
+    if (o.g) this.gest(ids, o.g, o.gd || d);
+    this.t += d + (o.gap != null ? o.gap : 0.3);
+    return this;
+  }
+  dir(text) { this.ep.lines.push({ t: this.abs, d: 0, dir: true, text, sc: this.sc.idx }); return this; }
+  cam(o) {
+    const c = Object.assign({}, o, { t: this.abs, sc: this.sc.idx });
+    const W = v => Array.isArray(v) && typeof v[0] === 'number' ? [v[0] + this.sc.off[0], v[1], v[2] + this.sc.off[1]] : v;
+    if (!o.follow) c.pos = W(o.pos);
+    c.look = W(o.look);
+    if (o.to) c.to = Object.assign({}, o.to, { pos: o.to.pos ? W(o.to.pos) : null, look: o.to.look ? W(o.to.look) : null });
+    this.ep.cams.push(c); return this;
+  }
+  fx(type, who, d = 1.5, o = {}) { const pos = Array.isArray(who) && typeof who[0] === 'number' ? [who[0] + this.sc.off[0], who[1], who[2] + this.sc.off[1]] : who; this.ep.fx.push({ t: this.abs, d, type, who: pos, o }); return this; }
+  sfx(name, dt = 0) { this.ep.sfx.push({ t: this.abs + dt, name }); return this; }
+  flag(name, v, fade = 0) { (this.ep.flags[name] || (this.ep.flags[name] = [])).push({ t: this.abs, v, fade }); return this; }
+  prop(name, st) { const s = Object.assign({ t: this.abs }, st); if (st.pos) s.pos = [st.pos[0] + this.sc.off[0], st.pos[1], st.pos[2] + this.sc.off[1]]; if (st.to) s.to = [st.to[0] + this.sc.off[0], st.to[1], st.to[2] + this.sc.off[1]]; (this.ep.props[name] || (this.ep.props[name] = [])).push(s); return this; }
+  ov(name, d) { this.ep.ovs.push({ t: this.abs, d, name }); return this; }
+}
+
+function flagAt(ep, name, t, def = 0) {
+  const arr = ep.flags[name]; if (!arr) return def;
+  const e = lastBefore(arr, t); if (!e) return def;
+  if (typeof e.v !== 'number' || !e.fade) return e.v;
+  const p = prevOf(arr, e), pv = p ? p.v : def;
+  return lerp(pv, e.v, smooth(clamp((t - e.t) / e.fade, 0, 1)));
+}
+// ===== Manus: Så Mycket Drama, avsnitt 1 – "Lappen i skåpet" =====
+const EP = new Episode();
+const HALF = Math.PI / 2;
+
+// --- Scen 1: Skolgården ---
+EP.scene({ id: 'gard', set: 'yard', light: 'morning', title: 'Lövbergsskolan', sub: 'Måndag 07:52', music: 'bouncy', blurb: 'Stella kommer i limousin. MacKenzie hackar. Carter dyker upp.' }, s => {
+  s.place('lola', -0.9, 2.3, { face: -HALF + 0.3 });
+  s.place('stella', -8.3, 1.4, { hidden: true, glasses: true, face: HALF });
+  s.place('mackenzie', 5.5, -6.5, { hidden: true });
+  s.place('carter', -6.8, -7.5, { hidden: true });
+  s.place('ex1', 3.4, -3.4, { face: -0.6 }); s.place('ex2', 4.3, -2.6, { face: -2.4 }); s.place('ex3', -3.6, -4, { face: 0.4 });
+  s.prop('limo', { mode: 'drive', pos: [-11, 0, 45], to: [-11, 0, 1.4], d: 10 });
+  s.ov('title', 6.2).sfx('jingle');
+  s.cam({ pos: [9, 6.5, 16], look: [-1, 1.5, -2], to: { pos: [6.5, 3.2, 10.5], look: [-3, 1.2, 1] } });
+  s.wait(6.4);
+  s.ov('loc', 3.2);
+  s.cam({ pos: [-3.4, 1.7, 5.8], look: 'lola', fov: 36 });
+  s.gest('lola', 'watch', 1.6).wait(0.4);
+  s.say('lola', 'Där är hon. Som vanligt…');
+  s.cam({ pos: [-4, 1.4, 9], look: [-10, 1.1, 2], fov: 36 });
+  s.wait(1.0);
+  s.sfx('pop').show('stella').fx('spark', 'stella', 2.2).wait(0.6);
+  s.say('stella', 'God morgon, Lövbergsskolan!', { emo: 'happy', g: 'cheer' });
+  s.move('stella', -2.3, 2.1, { speed: 1.9 });
+  s.cam({ pos: [-3.5, 1.9, 7.5], look: [-4.5, 1.4, 1.8], to: { pos: [-2.4, 1.75, 6.4], look: [-1.6, 1.45, 2.2] } });
+  s.wait(1.4);
+  s.say('lola', 'Stella! Kom du med limousin. Igen?', { emo: 'happy', to: 'stella' });
+  s.face('stella', 'lola');
+  s.acc('stella', 'sunglasses', false);
+  s.cam({ pos: [-2.6, 1.65, 4.8], look: 'stella', fov: 32 });
+  s.say('stella', 'Pappas privatjet är på service. Det är en kris.', { emo: 'sad', g: 'shrug', gd: 1.6 });
+  s.cam({ pos: [-1.6, 1.6, 5.6], look: ['stella', 'lola'] });
+  s.emo(['lola', 'stella'], 'happy').fx('haha', 'lola', 1.2);
+  s.say(['stella', 'lola'], 'BFF för alltid!', { g: 'highfive', gd: 1.4 });
+  s.sfx('pop', 0.5);
+  s.show('mackenzie'); const dm = s.move('mackenzie', 1.9, 1.5, { speed: 1.5 });
+  s.wait(0.6);
+  s.cam({ pos: [4.6, 1.5, 5.2], look: [3.6, 1.4, -2.5], to: { pos: [3.4, 1.55, 5.6], look: [1.9, 1.5, 1.2] } });
+  s.wait(dm - 0.4);
+  s.face('stella', 'mackenzie').face('lola', 'mackenzie').face('mackenzie', 'lola');
+  s.emo('mackenzie', 'smug').sfx('sting');
+  s.cam({ pos: [1.0, 1.75, 4.6], look: 'mackenzie', fov: 32 });
+  s.say('mackenzie', 'Oj, titta. Prinsessan och hennes lilla hovdam.', { g: 'hips' });
+  s.cam({ pos: [0.8, 1.6, 6.0], look: ['stella', 'lola'] });
+  s.say('stella', 'Hej, MacKenzie.', { emo: 'angry', g: 'cross', gd: 4 });
+  s.say('lola', 'Vad vill du nu?', { emo: 'angry' });
+  s.cam({ pos: [1.0, 1.75, 4.4], look: 'mackenzie', fov: 32 });
+  s.say('mackenzie', 'Inget. Jag undrar bara vem som ska gå med er på höstbalen. Ingen, kanske?', { emo: 'smug' });
+  s.fx('bubble', 'mackenzie', 1.5).wait(1.5).sfx('pop').wait(0.3);
+  s.cam({ pos: [-0.1, 1.55, 5.0], look: 'lola', fov: 34 });
+  s.say('lola', 'Lämna oss ifred, MacKenzie.', { emo: 'angry' });
+  // Carter
+  s.show('carter').flag('slowmo', 1, 0.6).sfx('swoon');
+  s.say(['ex1', 'ex2', 'ex3'], 'Det är Carter!', { name: 'Eleverna', emo: 'love', to: 'carter' });
+  s.fx('heart', 'ex1', 7).fx('heart', 'ex2', 7).fx('heart', 'ex3', 7);
+  s.move('carter', -4.6, 0.6, { d: 6.5, slow: true });
+  s.cam({ pos: [-3.6, 1.25, 4.4], look: 'carter', to: { pos: [-4.0, 1.45, 3.6] }, fov: 32 });
+  s.fx('spark', 'carter', 6.5).wait(1.2);
+  s.face('stella', 'carter').face('lola', 'carter').face('mackenzie', 'carter');
+  s.emo(['stella', 'lola'], 'love').emo('mackenzie', 'shocked');
+  s.gest(['stella', 'lola', 'mackenzie'], null);
+  s.cam({ pos: [-3.6, 1.6, 5.6], look: ['stella', 'lola'], to: { pos: [-3.0, 1.65, 4.8] } });
+  s.say(['stella', 'lola'], 'Carter…', { emo: 'love' });
+  s.fx('heart', 'stella', 4).fx('heart', 'lola', 4);
+  s.wait(3.2);
+  s.flag('slowmo', 0, 0.6);
+  s.move('carter', -3.7, 2.3, { speed: 1.3, wait: true });
+  s.face('carter', 'stella').face('stella', 'carter');
+  s.cam({ pos: [-3.0, 1.7, 6.2], look: ['carter', 'stella'] });
+  s.say('carter', 'Hej, Stella. Snygg väska.', { emo: 'happy' });
+  s.fx('spark', 'carter', 0.9).sfx('ding', -0.5);
+  s.cam({ pos: [-3.0, 1.65, 4.6], look: 'stella', fov: 30 });
+  s.say('stella', 'Tack… den är… från Paris.', { emo: 'love' });
+  s.fx('heart', 'stella', 2.5);
+  s.cam({ pos: [-1.0, 1.7, 7.0], look: [-1.5, 1.5, 2.6] });
+  s.move('carter', -2.3, 3.3, { speed: 1.6, wait: true });
+  s.move('carter', 0.5, 2.8, { speed: 1.6, wait: true });
+  s.face('carter', 'lola').face('lola', 'carter');
+  s.cam({ pos: [-0.2, 1.7, 6.2], look: ['carter', 'lola'] });
+  s.say('carter', 'Hej, Lola. Du har de finaste ögonen på hela skolan.', { emo: 'happy' });
+  s.fx('spark', 'carter', 0.9).sfx('ding', -0.5);
+  s.cam({ pos: [-0.1, 1.65, 5.0], look: 'lola', fov: 30 });
+  s.say('lola', 'Va? Jag? Tack!', { emo: 'love' });
+  s.fx('heart', 'lola', 2.5);
+  s.face('carter', 'mackenzie').face('mackenzie', 'carter');
+  s.cam({ pos: [1.4, 1.7, 6.4], look: ['carter', 'mackenzie'] });
+  s.say('carter', 'Hej, MacKenzie. Cool jacka.', { emo: 'happy' });
+  s.sfx('ding', -0.5);
+  s.cam({ pos: [2.2, 1.7, 4.4], look: 'mackenzie', fov: 30 });
+  s.emo('mackenzie', 'blush').wait(0.6);
+  s.say('mackenzie', '…Whatever.', { emo: 'blush' });
+  s.face('mackenzie', 2.6);
+  const dc = s.move('carter', 0, -8, { speed: 1.7 });
+  s.cam({ pos: [-0.5, 1.6, 7.5], look: [0.2, 1.5, 0], to: { look: [0, 2, -7] } });
+  s.wait(3).sfx('bell').wait(dc - 3).hide('carter');
+  s.face('stella', 'lola').face('lola', 'stella');
+  s.cam({ pos: [-1.6, 1.6, 5.4], look: ['stella', 'lola'] });
+  s.say(['stella', 'lola'], 'Han är så perfekt…', { emo: 'love' });
+  s.fx('heart', 'stella', 2).fx('heart', 'lola', 2).wait(0.6);
+});
+
+// --- Scen 2: Korridoren ---
+EP.scene({ id: 'korridor1', set: 'corridor', light: 'indoor', title: 'Korridoren', sub: 'Måndag 08:04', music: 'bouncy', blurb: 'Två bästisar, en kille. Det skär sig.' }, s => {
+  s.place('stella', -3.3, 0.4, { face: 0.6, emo: 'love' });
+  s.place('lola', -1.8, 0.9, { face: -0.6, emo: 'love' });
+  s.place('mackenzie', 7.6, -1.0, { face: -1.4 });
+  s.place('ex1', -8, 1.5, { face: HALF }); s.place('ex2', 9.5, 2, { face: -HALF });
+  s.move('ex1', 9, 2.4, { d: 12, speed: 1.4 }); s.move('ex2', -9, 1.2, { d: 11, speed: 1.4 });
+  s.ov('loc', 3.2);
+  s.cam({ pos: [0, 2.6, 8], look: [0, 1.6, -1], to: { pos: [-1.4, 1.8, 5.5], look: [-1.6, 1.5, 0] } });
+  s.move('stella', -0.95, 0.6, { speed: 1.2 }); s.move('lola', 0.95, 0.75, { speed: 1.2 });
+  s.wait(2.2);
+  s.face('stella', 'lola').face('lola', [0, -2.9]);
+  s.say('lola', 'Höstbalen är på fredag!', { emo: 'happy', g: 'point' });
+  s.cam({ pos: [0.2, 1.7, 4.6], look: ['stella', 'lola'] });
+  s.face('lola', 'stella');
+  s.say('stella', 'Och Carter sa att min väska var snygg. Det betyder att han vill gå med mig.', { emo: 'happy' });
+  s.cam({ pos: [-1.9, 1.65, 3.1], look: 'lola', fov: 30 });
+  s.say('lola', 'Eh… han sa att jag har de finaste ögonen på HELA skolan.', { emo: 'smug' });
+  s.cam({ pos: [1.9, 1.65, 3.1], look: 'stella', fov: 30 });
+  s.say('stella', 'Ögon? Alla har ögon, Lola.', { emo: 'angry', g: 'hips', gd: 3.5 });
+  s.cam({ pos: [-1.9, 1.65, 3.1], look: 'lola', fov: 30 });
+  s.say('lola', 'Alla har väskor också!', { emo: 'angry' });
+  s.cam({ pos: [1.9, 1.65, 3.1], look: 'stella', fov: 30 });
+  s.say('stella', 'Inte från Paris.', { emo: 'smug' });
+  s.cam({ pos: [0, 1.6, 4.6], look: ['stella', 'lola'], to: { pos: [0, 1.6, 2.6] }, fov: 38 });
+  s.sfx('sting').emo(['stella', 'lola'], 'angry').fx('zap', ['stella', 'lola'], 2.4).fx('anger', 'stella', 2.4).fx('anger', 'lola', 2.4);
+  s.wait(2.4);
+  s.say(['stella', 'lola'], 'Hmpf!', { g: 'cross', gd: 6 });
+  s.face('stella', -HALF - 0.3).face('lola', HALF + 0.3);
+  s.wait(1.2);
+  s.cam({ pos: [5.4, 1.6, 1.6], look: 'mackenzie', fov: 30 });
+  s.move('mackenzie', 6.5, -0.8, { d: 0.8 }); s.wait(0.8);
+  s.face('mackenzie', -1.0);
+  s.say('mackenzie', 'Två bästisar. En kille. Det här blir bättre än tv.', { emo: 'smug' });
+  s.prop('notepad', { mode: 'hand', who: 'mackenzie' }).gest('mackenzie', 'hold', 4);
+  s.say('mackenzie', 'Dags för lite… hjälp.', { emo: 'evil' });
+  s.sfx('sting').fx('spark', 'mackenzie', 1.2).wait(1);
+  s.prop('notepad', { mode: 'hide' });
+});
+
+// --- Scen 3: Klassrummet ---
+EP.scene({ id: 'lektion', set: 'classroom', light: 'indoor', title: 'Sal B12 · SO', sub: 'Måndag 08:15', music: 'boring', blurb: 'Gunilla, grus och 340 bilder.' }, s => {
+  const seat = (x, z) => [x, z + 0.68];
+  const P = Math.PI;
+  for (const [id, x, z] of [['stella', -2.7, -0.7], ['carter', 0, -0.7], ['lola', 2.7, -0.7], ['ex1', -2.7, 1.9], ['mackenzie', 0, 1.9], ['ex2', 2.7, 1.9]]) {
+    const [sx, sz] = seat(x, z); s.place(id, sx, sz, { face: P, pose: 'sit' });
+  }
+  s.place('gunilla', -1.2, -3.4, { face: 0, emo: 'bored' });
+  s.flag('board', 'lesson').flag('clock', 0);
+  s.ov('loc', 3.2);
+  s.cam({ pos: [0, 2.8, 6.6], look: [0, 1.7, -3.5], to: { pos: [0, 2.1, 4.8], look: [0, 1.8, -3.5] } });
+  s.wait(1.4);
+  s.say('gunilla', 'God morgon, klassen. Idag ska vi prata om… grus.', { emo: 'bored' });
+  s.cam({ pos: [0.9, 2.5, -4.3], look: [0, 0.9, 1.0], fov: 52 });
+  s.say(['ex1', 'ex2', 'mackenzie'], 'Neeej…', { name: 'Klassen', emo: 'sad' });
+  s.cam({ pos: [0.3, 1.9, -0.6], look: 'gunilla', fov: 36 });
+  s.face('gunilla', 0.5).gest('gunilla', 'pointBoard', 3);
+  s.say('gunilla', 'Grus. Små stenar. Som ligger. På en väg.', { emo: 'bored' });
+  s.face('gunilla', 0);
+  s.sfx('tick').sfx('tick', 1).sfx('tick', 2);
+  s.cam({ pos: [4.8, 3.1, -3.4], look: [4.8, 3.4, -4.93], fov: 30 });
+  s.flag('clock', 1, 0).wait(2.8);
+  s.cam({ pos: [0.3, 1.9, -0.6], look: 'gunilla', fov: 36 });
+  s.say('gunilla', 'År 1642 lades det första gruset i Småland. Det låg kvar. Länge.', { emo: 'bored' });
+  s.cam({ pos: [0.9, 2.5, -4.3], look: [0, 0.9, 1.0], fov: 52, to: { pos: [0.9, 2.2, -3.7] } });
+  s.pose(['ex1', 'ex2'], 'sleep').emo(['ex1', 'ex2'], 'sleep').fx('z', 'ex1', 30).fx('z', 'ex2', 30);
+  s.emo('carter', 'happy').wait(0.6);
+  s.face('carter', P + 0.9, 0.5).fx('spark', 'carter', 1).wait(0.3).emo('stella', 'love').fx('heart', 'stella', 1.5).wait(0.9);
+  s.face('carter', P - 0.9, 0.5).fx('spark', 'carter', 1).wait(0.3).emo('lola', 'love').fx('heart', 'lola', 1.5).wait(0.9);
+  s.face('carter', P, 0.5);
+  s.face('stella', P - 0.8).face('lola', P + 0.8).emo(['stella', 'lola'], 'angry').fx('zap', ['stella', 'lola'], 1.8).wait(1.8);
+  s.face('stella', P).face('lola', P);
+  s.cam({ pos: [0.8, 1.75, 0.7], look: 'mackenzie', fov: 34 });
+  s.prop('notepad', { mode: 'world', pos: [0, 0.9, 1.85], rot: -0.3 }).gest('mackenzie', 'write', 4).emo('mackenzie', 'evil');
+  s.say('mackenzie', 'Hehe… "Kram, C."', { emo: 'evil' });
+  s.wait(0.6).gest('mackenzie', null);
+  s.cam({ pos: [0.3, 1.9, -0.6], look: 'gunilla', fov: 36 });
+  s.say('gunilla', 'Stella. Vad är grus?', { emo: 'bored', to: 'stella' });
+  s.cam({ pos: [-2.2, 1.5, -1.6], look: 'stella', fov: 34 });
+  s.emo('stella', 'shocked').fx('bang', 'stella', 0.9).sfx('pop');
+  s.say('stella', 'Eh… små stenar som… drömmer?', { emo: 'shocked' });
+  s.cam({ pos: [0.9, 2.5, -4.3], look: [0, 0.9, 1.0], fov: 52 });
+  s.emo(['lola', 'mackenzie', 'carter'], 'happy').fx('haha', 'mackenzie', 1.6).fx('haha', 'lola', 1.6).wait(1.8);
+  s.cam({ pos: [0.3, 1.9, -0.6], look: 'gunilla', fov: 36 });
+  s.say('gunilla', 'Nej. Grus drömmer inte. Grus ligger bara.', { emo: 'bored' });
+  s.say('gunilla', 'Nu ska vi titta på bilder. Jag har trehundrafyrtio stycken.', { emo: 'happy' });
+  s.face('gunilla', 0.4);
+  s.cam({ pos: [1.2, 2.9, 5.0], look: [0, 2.0, -4.8], fov: 36 });
+  s.flag('board', 'slide1').sfx('click');
+  s.say('gunilla', 'Bild ett. Grus.', { emo: 'happy' });
+  s.flag('board', 'slide2').sfx('click');
+  s.say('gunilla', 'Bild två. Också grus.', { emo: 'love' });
+  s.cam({ pos: [0.9, 2.5, -4.3], look: [0, 0.9, 1.0], fov: 52 });
+  s.pose(['carter', 'mackenzie'], 'sleep').emo(['carter', 'mackenzie'], 'sleep').fx('z', 'carter', 8).fx('z', 'mackenzie', 8);
+  s.emo(['stella', 'lola'], 'bored').wait(2.6);
+  s.sfx('bell').fx('bang', 'carter', 0.8).fx('bang', 'mackenzie', 0.8);
+  s.pose(['carter', 'mackenzie', 'ex1', 'ex2'], 'sit', { fade: 0.2 }).emo(['carter', 'mackenzie', 'ex1', 'ex2', 'stella', 'lola'], 'shocked').wait(0.8);
+  s.flag('board', 'homework');
+  s.cam({ pos: [0.3, 1.9, -0.6], look: 'gunilla', fov: 36 });
+  s.say('gunilla', 'Läxa till imorgon: kapitel tolv. Grus, del två.', { emo: 'happy' });
+  s.cam({ pos: [0.9, 2.5, -4.3], look: [0, 0.9, 1.0], fov: 52 });
+  s.say(['ex1', 'ex2', 'mackenzie', 'lola', 'stella'], 'NEEEJ!', { name: 'Klassen', emo: 'sad' });
+});
+// --- Scen 4: Korridoren, lunch ---
+EP.scene({ id: 'korridor2', set: 'corridor', light: 'noon', title: 'Korridoren', sub: 'Måndag 11:45', music: 'bouncy', blurb: 'Två lappar, ett tuggummi och en tappad sida.' }, s => {
+  const P = Math.PI;
+  s.place('stella', -3.44, -1.5, { face: P });
+  s.place('lola', 3.44, -1.5, { face: P });
+  s.place('mackenzie', 6.3, -1.2, { face: -1.3, emo: 'smug' });
+  s.place('carter', -11, 1.6, { hidden: true });
+  s.place('gunilla', -11, 1.4, { hidden: true, emo: 'bored' });
+  s.flag('lockerStella', 0).flag('lockerLola', 0);
+  s.ov('loc', 3.2);
+  s.cam({ pos: [0, 2.4, 7.5], look: [0, 1.5, -2], to: { pos: [0, 2.0, 6.2] } });
+  s.wait(1.2);
+  s.flag('lockerStella', 1, 0.5).flag('lockerLola', 1, 0.5).sfx('click').wait(0.7);
+  s.prop('noteS', { mode: 'hand', who: 'stella' }).prop('noteL', { mode: 'hand', who: 'lola' });
+  s.gest(['stella', 'lola'], 'hold');
+  s.cam({ pos: [-2.6, 1.7, 0.6], look: 'stella', fov: 34 });
+  s.face('stella', 'cam');
+  s.say('stella', 'En lapp? "Gå på balen med mig? Kram, C."', { emo: 'love' });
+  s.fx('heart', 'stella', 2);
+  s.cam({ pos: [2.6, 1.7, 0.6], look: 'lola', fov: 34 });
+  s.face('lola', 'cam');
+  s.say('lola', '"Gå på balen med mig? Kram, C." Åååh!', { emo: 'love' });
+  s.fx('heart', 'lola', 2);
+  s.cam({ pos: [0, 1.7, 5.2], look: [0, 1.5, -1.5], fov: 44 });
+  s.face('stella', 'lola').face('lola', 'stella').wait(0.5);
+  s.sfx('sting').emo(['stella', 'lola'], 'shocked').fx('bang', 'stella', 1).fx('bang', 'lola', 1);
+  s.say(['stella', 'lola'], 'VA?!', { d: 1.4 });
+  s.flag('lockerStella', 0, 0.4).flag('lockerLola', 0, 0.4);
+  s.move('stella', -0.75, -0.5, { speed: 2.2 }); s.move('lola', 0.75, -0.5, { speed: 2.2, wait: true });
+  s.face('stella', 'lola').face('lola', 'stella');
+  s.cam({ pos: [0, 1.6, 3.4], look: ['stella', 'lola'] });
+  s.say('stella', 'Han skrev till MIG!', { emo: 'angry', g: 'point', gd: 1.5 });
+  s.say('lola', 'Nej, till MIG!', { emo: 'angry', g: 'point', gd: 1.2 });
+  s.fx('zap', ['stella', 'lola'], 1.6).fx('anger', 'stella', 1.6).wait(1.2);
+  s.cam({ pos: [-0.6, 1.65, 2.6], look: 'lola', fov: 34 });
+  s.gest('lola', 'sniff', 3).emo('lola', 'neutral');
+  s.say('lola', 'Vänta… varför luktar lappen jordgubbe?');
+  s.cam({ pos: [0.6, 1.65, 2.6], look: 'stella', fov: 34 });
+  s.gest('stella', 'sniff', 2.6);
+  s.say('stella', 'Jordgubbstuggummi.', { emo: 'shocked' });
+  s.face('stella', 'mackenzie', 1.2).face('lola', 'mackenzie', 1.2).emo(['stella', 'lola'], 'angry');
+  s.cam({ pos: [0, 1.6, 3.8], look: ['stella', 'lola'], to: { pos: [0, 1.6, 3.0] } }).wait(1.4);
+  s.cam({ pos: [5.2, 1.7, 0.9], look: 'mackenzie', fov: 30 });
+  s.fx('bubble', 'mackenzie', 1.6).wait(1.6).sfx('pop').wait(0.4);
+  s.say('mackenzie', '…Oj.', { emo: 'shocked' });
+  s.cam({ pos: [0.4, 1.6, 3.2], look: 'stella', fov: 36 });
+  s.say('stella', 'Det var du som skrev lapparna!', { emo: 'angry', g: 'point' });
+  s.cam({ pos: [5.2, 1.7, 0.9], look: 'mackenzie', fov: 30 });
+  s.say('mackenzie', 'Och ni gick på det! Ni skulle ha sett era ansikten!', { emo: 'happy', g: 'hips' });
+  s.fx('haha', 'mackenzie', 2);
+  s.prop('noteS', { mode: 'hide' }).prop('noteL', { mode: 'hide' }).gest(['stella', 'lola'], null);
+  s.face('stella', 'lola').face('lola', 'stella');
+  s.cam({ pos: [0, 1.6, 3.0], look: ['stella', 'lola'] });
+  s.say('lola', 'Förlåt att jag blev sur.', { emo: 'sad' });
+  s.say('stella', 'Förlåt du med. BFF före killar?', { emo: 'sad' });
+  s.say('lola', 'Alltid.', { emo: 'happy' });
+  s.move('stella', -0.42, -0.5, { d: 0.5, walk: false }); s.move('lola', 0.42, -0.5, { d: 0.5, walk: false });
+  s.gest(['stella', 'lola'], 'hug', 2.4).emo(['stella', 'lola'], 'love').fx('heartGold', 'stella', 2.4).fx('heartGold', 'lola', 2.4).sfx('aww').wait(2.6);
+  s.move('stella', -0.8, -0.4, { d: 0.5, walk: false }); s.move('lola', 0.8, -0.4, { d: 0.5, walk: false });
+  // Carter
+  s.show('carter'); s.move('carter', -2.0, -1.1, { speed: 2.4 });
+  s.cam({ pos: [0.6, 1.7, 4.4], look: [-2.0, 1.5, -0.6] });
+  s.wait(2.6);
+  s.face('stella', 'carter').face('lola', 'carter').face('carter', 'stella').emo('carter', 'happy');
+  s.say('stella', 'Carter! Vem av oss vill du gå på balen med? På riktigt?', { emo: 'neutral', g: 'hips', gd: 3 });
+  s.cam({ pos: [-2.3, 1.75, 1.8], look: 'carter', fov: 32 });
+  s.fx('sweat', 'carter', 3).emo('carter', 'nervous');
+  s.say('carter', 'Jag? Eh… jag gillar ju… alla! Ni är alla jättefina!', { g: 'shrug', gd: 2 });
+  s.emo('carter', 'happy').fx('spark', 'carter', 1).sfx('ding');
+  s.say('carter', 'Oj, kolla tiden! Mattetävling! Hej då!', { emo: 'shocked' });
+  s.cam({ pos: [0, 1.5, 6.5], look: [1, 1.2, 0.6], fov: 42 });
+  s.prop('page', { mode: 'hide' });
+  s.move('carter', -1.2, 1.6, { speed: 3.4, wait: true });
+  s.move('carter', 12, 1.6, { speed: 3.4 });
+  s.wait(0.95).prop('page', { mode: 'fall', pos: [2.0, 1.2, 1.5], to: [2.3, 0.012, 1.3], d: 1.3 }).wait(3.0);
+  s.hide('carter');
+  s.face('stella', 'lola').face('lola', 'stella');
+  s.cam({ pos: [0, 1.6, 3.0], look: ['stella', 'lola'] });
+  s.say('lola', 'Han sa exakt samma sak till alla.', { emo: 'bored' });
+  s.say('stella', 'Typiskt.', { emo: 'bored', g: 'cross', gd: 2 });
+  s.cam({ pos: [5.0, 1.6, 1.4], look: 'mackenzie', fov: 30 });
+  s.face('mackenzie', -0.9);
+  s.say('mackenzie', '…Han sa att min jacka var cool.', { emo: 'sad' });
+  s.face('stella', 'mackenzie').face('lola', 'mackenzie');
+  s.cam({ pos: [3.0, 1.6, 2.6], look: 'lola', fov: 32 });
+  s.say('lola', 'Han säger så till alla, MacKenzie.', { emo: 'sad' });
+  s.cam({ pos: [5.0, 1.6, 1.4], look: 'mackenzie', fov: 30 });
+  s.say('mackenzie', 'Jag vet.', { emo: 'sad' }).wait(0.8);
+  s.say('mackenzie', 'Inte för att jag bryr mig!', { emo: 'angry', g: 'cross', gd: 30 });
+  s.face('mackenzie', 0.9);
+  // Gunilla
+  s.show('gunilla').prop('mug', { mode: 'hand', who: 'gunilla' }).gest('gunilla', 'hold');
+  s.move('gunilla', -2.2, -1.3, { speed: 0.9 });
+  s.cam({ pos: [1.2, 1.6, 4.6], look: [-3, 1.6, -0.5], fov: 40 }).wait(3.0);
+  s.face('stella', 'gunilla').face('lola', 'gunilla').emo(['stella', 'lola'], 'shocked');
+  s.cam({ pos: [-0.9, 1.9, 1.4], look: 'gunilla', fov: 32 }).wait(1.4);
+  s.say('gunilla', 'Flickor. Det här är en korridor. Inte en dramaserie.', { emo: 'bored', to: 'stella' });
+  s.move('gunilla', -11, 1.6, { speed: 0.8 });
+  s.cam({ pos: [0, 1.6, 3.2], look: ['stella', 'lola'] }).wait(1.2);
+  s.face('stella', 'lola').face('lola', 'stella').wait(0.9);
+  s.face('stella', 'cam').face('lola', 'cam').emo(['stella', 'lola'], 'smug');
+  s.cam({ pos: [0, 1.62, 2.4], look: ['stella', 'lola'], fov: 40 }).wait(0.4);
+  s.say(['stella', 'lola'], 'Så. Mycket. Drama.', { d: 2.2 });
+  s.ov('drop', 2.8).sfx('jingle').wait(3);
+  s.hide('gunilla');
+  s.move('stella', -11, -0.2, { speed: 1.6 }); s.move('lola', -11, 0.6, { speed: 1.6 });
+  s.cam({ pos: [4.4, 1.6, 4.6], look: 'mackenzie', fov: 36 }).wait(1.8);
+  s.gest('mackenzie', null).face('mackenzie', 'page').wait(0.4);
+  s.emo('mackenzie', 'neutral').fx('bang', 'mackenzie', 0.8).sfx('pop');
+  s.move('mackenzie', 2.8, 0.9, { speed: 1.4, wait: true });
+  s.face('mackenzie', [2.3, 1.3]);
+  s.gest('mackenzie', 'pickup', 1.1).wait(0.6).prop('page', { mode: 'hand', who: 'mackenzie' }).wait(0.6);
+  s.gest('mackenzie', 'read', 6).face('mackenzie', 'cam');
+  s.cam({ pos: [2.8, 1.75, 2.9], look: 'mackenzie', fov: 30 });
+  s.emo('mackenzie', 'shocked').fx('bang', 'mackenzie', 1).wait(1.4);
+  s.emo('mackenzie', 'evil');
+  s.say('mackenzie', 'Nämen… Carter. Det här blir ju intressant.', { emo: 'evil' });
+  s.sfx('sting').cam({ pos: [2.8, 1.75, 2.0], look: 'mackenzie', fov: 30 }).wait(1.6);
+  s.prop('page', { mode: 'hide' });
+});
+
+// --- Scen 5: Carters rum ---
+EP.scene({ id: 'rummet', set: 'room', light: 'night', title: 'Carters rum', sub: 'Måndag 21:30', music: 'night', tail: 7.5, blurb: 'Carters hemlighet. Och sidan som saknas.' }, s => {
+  s.place('carter', -0.2, -1.42, { face: 0, pose: 'sitbed', y: 0.1, g: 'write' });
+  s.prop('diary', { mode: 'hand', who: 'carter' });
+  s.prop('phone', { mode: 'world', pos: [1.35, 0.72, -2.4], rot: 0.3 });
+  s.flag('lamp', 1).flag('phoneGlow', 0);
+  s.ov('loc', 3.2);
+  s.cam({ pos: [2.6, 2.4, 3.4], look: [-0.2, 1.2, -1.6], to: { pos: [1.6, 1.8, 2.0], look: [-0.2, 1.3, -1.5] } });
+  s.wait(1.6);
+  s.say('carter', 'Kära dagbok. Dag fyrtiosju.', { emo: 'neutral' });
+  s.say('carter', 'Alla tror fortfarande att jag är kär i dem.', { emo: 'sad' });
+  s.cam({ pos: [0.5, 1.7, 1.3], look: 'carter', fov: 34 });
+  s.say('carter', 'Stella tror det. Lola tror det. Till och med MacKenzie.', { emo: 'sad' });
+  s.cam({ pos: [0.2, 1.65, 0.9], look: 'carter', fov: 30 });
+  s.gest('carter', 'hold');
+  s.say('carter', 'Sanningen är… att jag inte är kär i någon alls.', { emo: 'sad' });
+  s.say('carter', 'Jag vill bara att alla ska gilla mig. Är det så konstigt?', { emo: 'nervous' });
+  s.face('carter', -1.25, 0.6);
+  s.cam({ pos: [-2.0, 1.5, 1.0], look: [-3.6, 1.1, 0.3], fov: 38 });
+  s.say('carter', 'Eller hur, Professorn?', { emo: 'happy' });
+  s.sfx('squeak').flag('hamster', 1, 0.6).wait(1.4);
+  s.cam({ pos: [0.5, 1.7, 1.3], look: 'carter', fov: 34 });
+  s.face('carter', 0, 0.5);
+  s.say('carter', 'Okej. Ingen får någonsin veta.', { emo: 'neutral', g: 'write', gd: 2.5 });
+  s.gest('carter', 'flip', 2.2).wait(0.4);
+  s.emo('carter', 'shocked').fx('sweat', 'carter', 3);
+  s.say('carter', 'Vänta… var är sidan fyrtiosex?', { emo: 'shocked' });
+  s.flag('phoneGlow', 1, 0.2).sfx('buzz').fx('bzz', [1.35, 1.1, -2.4], 1.6);
+  s.cam({ pos: [1.2, 1.3, -0.9], look: [1.35, 0.75, -2.4], fov: 36 }).wait(1.8);
+  s.face('carter', 0.8, 0.4);
+  s.prop('diary', { mode: 'world', pos: [-0.6, 0.79, -1.75], rot: 0.4 });
+  s.prop('phone', { mode: 'hand', who: 'carter' }).gest('carter', 'phone');
+  s.cam({ pos: [0.6, 1.7, 1.4], look: 'carter', fov: 34 });
+  s.ov('phone', 4.4).sfx('ding').wait(4.6);
+  s.cam({ pos: [0.3, 1.7, 1.5], look: 'carter', fov: 32, to: { pos: [0.1, 1.7, 0.5] } });
+  s.say('carter', '…Åh nej.', { emo: 'shocked', d: 2.2 });
+  s.sfx('sting', -1.6).wait(0.4);
+  s.flag('lamp', 0, 0.8);
+  s.ov('end', 9);
+});
+
+EP.finish();
+// ===== Körtid: räkna fram hela världen för en given tidpunkt =====
+const EMO = {
+  neutral: { brow: 0, by: 0, mouth: 'smile', ms: 0.45, eye: 1 },
+  happy:   { brow: -0.12, by: 0.03, mouth: 'smile', ms: 1, eye: 1, teeth: 1 },
+  love:    { brow: -0.3, by: 0.04, mouth: 'smile', ms: 1, eye: 1.05, blush: 1, pupil: 1.3 },
+  blush:   { brow: -0.25, by: 0.02, mouth: 'flat', eye: 0.85, blush: 1 },
+  angry:   { brow: 0.5, by: -0.03, mouth: 'frown', eye: 0.8 },
+  sad:     { brow: -0.45, by: 0.02, mouth: 'frown', eye: 0.85 },
+  shocked: { brow: -0.15, by: 0.08, mouth: 'O', eye: 1.3, pupil: 0.8 },
+  smug:    { brow: 0.15, by: 0, mouth: 'smirk', eye: 0.65, oneBrow: 1 },
+  evil:    { brow: 0.5, by: -0.02, mouth: 'smirk', ms: 1.2, eye: 0.6 },
+  bored:   { brow: 0, by: -0.01, mouth: 'flat', eye: 0.45 },
+  sleep:   { brow: 0, by: -0.02, mouth: 'O', oScale: 0.5, eye: 0.06 },
+  nervous: { brow: -0.4, by: 0.03, mouth: 'flat', eye: 1.1, wobble: 1 },
+};
+function gesturePose(g, t) {
+  const rest = { L: [0, 0.12], R: [0, -0.12] };
+  switch (g) {
+    case 'watch': return { L: [-1.45, -0.45], R: rest.R, head: 0.3 };
+    case 'cheer': return { L: [-0.2, 2.5 + Math.sin(t * 10) * 0.15], R: [-0.2, -2.5 - Math.sin(t * 10) * 0.15] };
+    case 'shrug': return { L: [-0.5, 0.95], R: [-0.5, -0.95], head: -0.1 };
+    case 'highfive': return { L: rest.L, R: [-0.9, -2.5] };
+    case 'hips': return { L: [0.3, 0.75], R: [0.3, -0.75] };
+    case 'cross': return { L: [-1.25, -0.8], R: [-1.32, 0.8] };
+    case 'hold': return { L: rest.L, R: [-1.15, 0.2], head: 0.18 };
+    case 'point': return { L: rest.L, R: [-1.55, -0.12] };
+    case 'pointBoard': return { L: rest.L, R: [-0.4, -1.55] };
+    case 'write': return { L: [-0.9, -0.35], R: [-0.95, 0.3 + Math.sin(t * 14) * 0.08], head: 0.32 };
+    case 'sniff': return { L: rest.L, R: [-2.05, 0.4], head: -0.1 };
+    case 'hug': return { L: [-1.3, -0.45], R: [-1.3, 0.45] };
+    case 'pickup': return { L: [-0.6, 0.1], R: [-1.0, -0.05], lean: 0.75, head: 0.3 };
+    case 'read': return { L: [-1.2, -0.25], R: [-1.25, 0.25], head: 0.22 };
+    case 'phone': return { L: rest.L, R: [-1.75, 0.45], head: 0.1 };
+    case 'flip': return { L: [-0.9, -0.35], R: [-1.0 + Math.sin(t * 9) * 0.3, 0.05], head: 0.3 };
+    default: return rest;
+  }
+}
+function posePose(p, y) {
+  switch (p) {
+    case 'sit': return { thigh: -1.5, shin: 1.5, y: 0, lean: 0, head: 0 };
+    case 'sitbed': return { thigh: -1.5, shin: 1.45, y: y || 0, lean: 0, head: 0 };
+    case 'sleep': return { thigh: -1.5, shin: 1.5, y: 0, lean: 0.62, head: 0.55, arms: { L: [-1.15, -0.3], R: [-1.15, 0.3] } };
+    default: return { thigh: 0, shin: 0, y: 0, lean: 0, head: 0 };
+  }
+}
+function blendArr(a, b, k) { return [lerp(a[0], b[0], k), lerp(a[1], b[1], k)]; }
+function blendPose(a, b, k) {
+  const o = {};
+  for (const key of ['thigh', 'shin', 'y', 'lean', 'head']) o[key] = lerp(a[key] || 0, b[key] || 0, k);
+  if (a.arms || b.arms) { o.arms = b.arms || a.arms; o.armK = b.arms ? (a.arms ? 1 : k) : 1 - k; }
+  return o;
+}
+
+const W = { rigs: {}, props: {}, tmp: new THREE.Vector3(), tmp2: new THREE.Vector3() };
+
+function headPos(id, out) { const r = W.rigs[id]; r.head.getWorldPosition(out); return out; }
+
+function resolveFace(e, me, T, camPos) {
+  const tg = e.target;
+  if (typeof tg === 'number') return tg;
+  let x, z;
+  if (Array.isArray(tg)) { x = tg[0]; z = tg[1]; }
+  else if (tg === 'cam') { x = camPos.x; z = camPos.z; }
+  else if (W.rigs[tg]) { const p = W.state[tg]; if (!p) return 0; const a = Math.atan2(p.x - me.x, p.z - me.z); return lerpAngle(a, Math.atan2(camPos.x - me.x, camPos.z - me.z), 0.4); }
+  else if (W.props[tg]) { const p = W.props[tg].getWorldPosition(W.tmp2); x = p.x; z = p.z; }
+  else return 0;
+  return Math.atan2(x - me.x, z - me.z);
+}
+
+function evalChars(T, sc) {
+  W.state = {};
+  for (const id in W.rigs) {
+    const c = EP.ch[id], r = W.rigs[id];
+    const present = sc.present.has(id) && c;
+    const vis = present && (lastBefore(c.vis, T) || { v: false }).v;
+    r.root.visible = !!vis;
+    if (!vis) continue;
+    const seg = segAt(c.pos, T), p = posFromSeg(seg, T);
+    W.state[id] = { x: p.x, z: p.z, walking: p.walking && seg.t1 - seg.t0 > 0.01, seg, slow: seg && seg.slow };
+  }
+}
+
+function applyChars(T, camPos) {
+  for (const id in W.state) {
+    const st = W.state[id], c = EP.ch[id], r = W.rigs[id], d = r.d, seed = hash(id.length * 13 + id.charCodeAt(0));
+    // riktning
+    const fe = lastBefore(c.face, T);
+    let ang = fe ? resolveFace(fe, st, T, camPos) : 0;
+    if (fe && fe.fade) { const pe = prevOf(c.face, fe); if (pe) ang = lerpAngle(resolveFace(pe, st, T, camPos), ang, smooth(clamp((T - fe.t) / fe.fade, 0, 1))); }
+    if (st.walking) { const k = clamp((T - st.seg.t0) / 0.25, 0, 1); ang = lerpAngle(ang, st.seg.dir, k); }
+    // hållning
+    const pe = lastBefore(c.pose, T) || { p: 'stand' }, ppe = prevOf(c.pose, pe);
+    let pose = posePose(pe.p, pe.y);
+    if (ppe && pe.fade && T - pe.t < pe.fade) pose = blendPose(posePose(ppe.p, ppe.y), pose, smooth((T - pe.t) / pe.fade));
+    const ge = lastBefore(c.gest, T), pge = ge && prevOf(c.gest, ge);
+    let gp = gesturePose(ge && ge.g, T);
+    if (ge && pge && ge.fade && T - ge.t < ge.fade) { const k = smooth((T - ge.t) / ge.fade), a = gesturePose(pge.g, T); gp = { L: blendArr(a.L, gp.L, k), R: blendArr(a.R, gp.R, k), head: lerp(a.head || 0, gp.head || 0, k), lean: lerp(a.lean || 0, gp.lean || 0, k) }; }
+    if (pose.arms) { const k = pose.armK != null ? pose.armK : 1; gp = { L: blendArr(gp.L, pose.arms.L, k), R: blendArr(gp.R, pose.arms.R, k), head: gp.head }; }
+    const talking = EP.lines.some(l => !l.dir && l.who.includes(id) && T >= l.t && T < l.t + l.d - 0.15);
+    const em = EMO[(lastBefore(c.emo, T) || { emo: 'neutral' }).emo] || EMO.neutral;
+    // ben och gång
+    let th = [pose.thigh, pose.thigh], sh = [pose.shin, pose.shin], bob = 0, swing = 0;
+    if (st.walking) {
+      const ph = T * (st.slow ? 5.5 : 9.5) + seed * 6;
+      th = [Math.sin(ph) * 0.55, -Math.sin(ph) * 0.55]; sh = [Math.max(0, -Math.sin(ph)) * 0.7, Math.max(0, Math.sin(ph)) * 0.7];
+      bob = Math.abs(Math.sin(ph)) * 0.045; swing = Math.sin(ph) * 0.45;
+    }
+    r.root.position.set(st.x, pose.y, st.z);
+    r.root.rotation.y = ang;
+    r.thigh[0].rotation.x = th[0]; r.thigh[1].rotation.x = th[1];
+    r.shin[0].rotation.x = sh[0]; r.shin[1].rotation.x = sh[1];
+    r.hips.position.y = HIP + bob;
+    r.body.rotation.x = pose.lean + (gp.lean || 0);
+    r.body.scale.y = 1 + Math.sin(T * 2.1 + seed * 9) * 0.008;
+    const isRest = !ge || !ge.g;
+    r.arm[0].rotation.set(gp.L[0] + (isRest ? swing : 0), 0, gp.L[1]);
+    r.arm[1].rotation.set(gp.R[0] - (isRest ? swing : 0), 0, gp.R[1]);
+    // huvud och ansikte
+    const nod = talking ? Math.sin(T * 6.5 + seed * 5) * 0.05 : 0;
+    r.neck.rotation.x = (pose.head || 0) + (gp.head || 0) + nod;
+    r.neck.rotation.z = Math.sin(T * 1.7 + seed * 4) * 0.035 + (em.wobble ? Math.sin(T * 17) * 0.04 : 0);
+    r.neck.rotation.y = em.wobble ? Math.sin(T * 3) * 0.08 : 0;
+    const bp = 3.0 + seed * 2.4, ph = (T + seed * 3.7) % bp, blink = ph < 0.12 ? 0.1 : 1;
+    for (let i = 0; i < 2; i++) {
+      const e = r.eye[i]; e.scale.set(1, Math.max(0.06, em.eye * blink), 1);
+      const pupil = e.children[1]; pupil.scale.setScalar(em.pupil || 1); pupil.scale.z = 0.5;
+      const b = r.brow[i], sx = b.userData.sx;
+      b.rotation.z = sx * em.brow * (em.oneBrow && sx > 0 ? -0.6 : 1);
+      b.position.y = 0.17 + em.by + (em.oneBrow && sx < 0 ? 0.05 : 0) + (em.eye > 1.2 ? 0.03 : 0);
+    }
+    for (const b of r.blush) b.visible = !!em.blush;
+    r.mSmile.visible = r.mFrown.visible = r.mOpen.visible = r.mFlat.visible = false;
+    if (r.teeth) r.teeth.visible = false;
+    r.mSmile.position.x = 0; r.mSmile.rotation.z = Math.PI; r.mSmile.scale.set(1, 1, 1);
+    if (talking) {
+      r.mOpen.visible = true;
+      const o = 0.25 + 0.75 * Math.abs(Math.sin(T * 12.5 + seed * 7)) * (0.65 + 0.35 * Math.sin(T * 4.3 + seed));
+      r.mOpen.scale.set(em.mouth === 'O' ? 0.7 : 1, o, 0.4);
+    } else if (em.mouth === 'smile') { r.mSmile.visible = true; r.mSmile.scale.set(em.ms, em.ms * 0.9, 1); if (r.teeth && em.teeth) r.teeth.visible = true; }
+    else if (em.mouth === 'smirk') { r.mSmile.visible = true; r.mSmile.position.x = 0.03; r.mSmile.rotation.z = Math.PI - 0.35; r.mSmile.scale.set(0.75 * (em.ms || 1), 0.6, 1); }
+    else if (em.mouth === 'frown') r.mFrown.visible = true;
+    else if (em.mouth === 'O') { r.mOpen.visible = true; const s = em.oScale || 1; r.mOpen.scale.set(0.6 * s, 0.85 * s, 0.4); }
+    else r.mFlat.visible = true;
+    // tillbehör
+    if (r.acc.sunglasses) { let on = false; for (const a of c.acc) { if (a.t > T) break; if (a.name === 'sunglasses') on = a.on; } r.acc.sunglasses.visible = on; }
+    if (r.bubble) r.bubble.visible = false;
+    st.ang = ang; st.lastAngle = ang;
+    r.root.updateMatrixWorld(true);
+  }
+}
+// ===== Värld: renderare, ljus, rekvisita, effekter, kamera =====
+const LIGHTS = {
+  morning: { bg: '#bfe6ff', sky: '#e6f6ff', gr: '#8fd16f', hemi: 0.6, sun: '#fff1d6', si: 0.62, dir: [8, 14, 10] },
+  indoor:  { bg: '#f3e6c8', sky: '#fff8ea', gr: '#c9a77e', hemi: 0.66, sun: '#ffffff', si: 0.45, dir: [4, 10, 9] },
+  noon:    { bg: '#f3e6c8', sky: '#fff4dc', gr: '#d1a77a', hemi: 0.68, sun: '#fff0d0', si: 0.48, dir: [-4, 10, 9] },
+  night:   { bg: '#10142e', sky: '#5a6fae', gr: '#1c0e1d', hemi: 0.5, sun: '#9fb4ff', si: 0.28, dir: [-3, 8, 6] },
+};
+
+function buildProps(scene) {
+  const P = W.props;
+  const paper = (col, label) => {
+    const g = new THREE.Group();
+    const tex = label ? canvasTex(128, 160, (c, w, h) => { c.fillStyle = col; c.fillRect(0, 0, w, h); c.fillStyle = '#7a3b52'; c.font = `700 30px ${FONT_H}`; c.textAlign = 'center'; c.fillText('Gå på balen', w / 2, 50); c.fillText('med mig?', w / 2, 82); c.font = `700 36px ${FONT_H}`; c.fillText(label, w / 2, 130); }) : null;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.32), new THREE.MeshBasicMaterial({ color: '#ffffff', map: tex, side: THREE.DoubleSide }));
+    if (!tex) m.material.color.set(col);
+    g.add(m); return g;
+  };
+  P.noteS = paper('#ffd1e3', 'Kram, C ♥'); P.noteL = paper('#ffd1e3', 'Kram, C ♥');
+  P.page = paper('#fffdf5'); P.page.children[0].material.color.set('#fffdf5');
+  P.notepad = new THREE.Group(); P.notepad.add(T(G.box(0.26, 0.04, 0.34), '#ff8fc0', { ink: 0.01 }));
+  P.mug = new THREE.Group(); P.mug.add(T(G.cyl(0.08, 0.07, 0.18, 12), '#ffffff', { ink: 0.01 })); P.mug.add(at(T(new THREE.TorusGeometry(0.05, 0.015, 6, 12), '#ffffff', { outline: false }), 0.09, 0, 0));
+  P.diary = new THREE.Group(); P.diary.add(T(G.box(0.36, 0.06, 0.28), '#37c8b4', { ink: 0.01 })); P.diary.add(at(new THREE.Mesh(G.box(0.34, 0.065, 0.02), basic('#f6c453')), 0, 0, 0.12));
+  P.phone = new THREE.Group(); P.phone.add(T(G.box(0.12, 0.02, 0.22), '#1c0e1d', { ink: 0.008 }));
+  W.phoneScreen = at(new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.19), basic('#22263f')), 0, 0.012, 0); W.phoneScreen.rotation.x = -Math.PI / 2; P.phone.add(W.phoneScreen);
+  for (const k in P) { P[k].visible = false; scene.add(P[k]); }
+  P.limo = SETCTX.limo;
+}
+const HAND_OFF = { noteS: [0, -0.1, 0.06, -1.2], noteL: [0, -0.1, 0.06, -1.2], page: [0, -0.1, 0.06, -1.2], notepad: [0, -0.06, 0.06, 0], mug: [0, -0.06, 0.06, 0], diary: [0, -0.07, 0.08, 0], phone: [0, -0.06, 0.06, -1.2] };
+
+function evalProps(T, scene) {
+  for (const name in EP.props) {
+    const obj = W.props[name]; if (!obj) continue;
+    const e = lastBefore(EP.props[name], T);
+    if (name === 'limo') {
+      if (!e) continue;
+      const k = clamp((T - e.t) / e.d, 0, 1), ek = 1 - Math.pow(1 - k, 3);
+      obj.position.set(lerp(e.pos[0], e.to[0], ek), 0, lerp(e.pos[2], e.to[2], ek));
+      const dist = Math.abs(e.to[2] - e.pos[2]) * ek;
+      for (const w of SETCTX.limoWheels) w.rotation.x = -dist / 0.38;
+      continue;
+    }
+    const sc = EP.sceneAt(T);
+    if (!e || e.mode === 'hide' || e.t < sc.start) { obj.visible = false; continue; }
+    obj.visible = true;
+    if (e.mode === 'hand') {
+      const r = W.rigs[e.who]; if (obj.parent !== r.handR) r.handR.add(obj);
+      const o = HAND_OFF[name] || [0, -0.08, 0.06, 0];
+      obj.position.set(o[0], o[1], o[2]); obj.rotation.set(o[3], 0, 0);
+      const s = 1 / r.d.scale; obj.scale.setScalar(s * 1.0);
+      if (!r.root.visible) obj.visible = false;
+    } else {
+      if (obj.parent !== scene) scene.add(obj);
+      obj.scale.setScalar(1);
+      if (e.mode === 'fall') {
+        const k = clamp((T - e.t) / e.d, 0, 1);
+        obj.position.set(lerp(e.pos[0], e.to[0], k) + Math.sin(k * 9) * 0.15 * (1 - k), lerp(e.pos[1], e.to[1], easeIO(k)), lerp(e.pos[2], e.to[2], k));
+        obj.rotation.set(lerp(0, -Math.PI / 2, k) + Math.sin(k * 11) * 0.4 * (1 - k), k * 1.5, 0);
+      } else {
+        obj.position.set(e.pos[0], e.pos[1], e.pos[2]);
+        obj.rotation.set(name === 'page' || name === 'noteS' ? -Math.PI / 2 : 0, e.rot || 0, 0);
+      }
+    }
+  }
+  // telefonens summer
+  const g = flagAt(EP, 'phoneGlow', T, 0);
+  W.phoneScreen.material.color.set(g > 0.5 ? '#bfe0ff' : '#22263f');
+  const pe = lastBefore(EP.flags.phoneGlow || [], T);
+  if (pe && pe.v === 1 && T - pe.t < 1.6 && W.props.phone.parent !== null && lastBefore(EP.props.phone, T).mode === 'world') W.props.phone.position.x += Math.sin(T * 80) * 0.01;
+}
+
+function applyFlags(T) {
+  const ls = SETCTX.lockers;
+  if (ls.stella) ls.stella.rotation.y = -1.9 * flagAt(EP, 'lockerStella', T, 0);
+  if (ls.lola) ls.lola.rotation.y = -1.9 * flagAt(EP, 'lockerLola', T, 0);
+  const b = flagAt(EP, 'board', T, 'lesson');
+  if (SETCTX.board.material.map !== BOARD[b]) { SETCTX.board.material.map = BOARD[b]; SETCTX.board.material.needsUpdate = true; }
+  SETCTX.clockS.rotation.z = -Math.floor(T) * TAU / 60;
+  SETCTX.clockM.rotation.z = -(15 + T / 60) * TAU / 60;
+  SETCTX.clockH.rotation.z = -(8 + 15 / 60) * TAU / 12;
+  const lamp = flagAt(EP, 'lamp', T, 1);
+  SETCTX.lamp.intensity = 1.5 * lamp;
+  SETCTX.shade.material.color.setRGB(lerp(0.25, 1, lamp), lerp(0.25, 0.94, lamp), lerp(0.3, 0.69, lamp));
+  SETCTX.hamster.rotation.y = Math.PI * flagAt(EP, 'hamster', T, 0);
+  SETCTX.hamster.position.y = 1.04 + Math.abs(Math.sin(T * 7)) * 0.01;
+  return { slowmo: flagAt(EP, 'slowmo', T, 0), lamp };
+}
+
+// Effekter (sprites) – räknas fram ur tiden, inget tillstånd mellan bildrutor
+function makeFxPool(scene) {
+  W.pool = [];
+  for (let i = 0; i < 90; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: FX_TEX.heart, transparent: true, depthWrite: false })); s.visible = false; s.renderOrder = 10; scene.add(s); W.pool.push(s); }
+}
+function evalFx(T) {
+  let n = 0;
+  const use = (tex, x, y, z, size, op) => { if (n >= W.pool.length) return; const s = W.pool[n++]; s.visible = true; s.material.map = tex; s.material.opacity = clamp(op, 0, 1); s.position.set(x, y, z); s.scale.set(size, size, 1); };
+  for (const p of W.pool) p.visible = false;
+  const hp = new THREE.Vector3(), hp2 = new THREE.Vector3();
+  for (const f of EP.fx) {
+    if (T < f.t || T > f.t + f.d) continue;
+    const lt = T - f.t, end = f.t + f.d - T;
+    let anchor;
+    if (Array.isArray(f.who) && typeof f.who[0] === 'number') anchor = hp.set(f.who[0], f.who[1], f.who[2]);
+    else if (Array.isArray(f.who)) { if (!W.rigs[f.who[0]].root.visible) continue; headPos(f.who[0], hp); headPos(f.who[1], hp2); hp.add(hp2).multiplyScalar(0.5); hp.y += 0.15; }
+    else { const r = W.rigs[f.who]; if (!r.root.visible) continue; headPos(f.who, hp); }
+    const fadeEnd = clamp(end / 0.3, 0, 1);
+    switch (f.type) {
+      case 'heart': case 'heartGold': {
+        const L = 1.5;
+        for (let i = 0; i < 4; i++) { const age = lt - i * L / 4; if (age < 0) continue; const ph = (age % L) / L, k = i + Math.floor(age / L) * 4;
+          use(FX_TEX[f.type], hp.x + Math.sin(k * 2.3) * 0.35 + Math.sin(ph * 6 + k) * 0.06, hp.y + 0.35 + ph * 0.9, hp.z + Math.cos(k * 1.7) * 0.2, 0.22 + Math.sin(ph * Math.PI) * 0.12, (1 - ph) * 1.4 * fadeEnd); }
+        break; }
+      case 'z': {
+        const L = 2.2;
+        for (let i = 0; i < 3; i++) { const age = lt - i * L / 3; if (age < 0) continue; const ph = (age % L) / L;
+          use(FX_TEX.z, hp.x + 0.25 + ph * 0.45, hp.y + 0.4 + ph * 0.7, hp.z, 0.16 + ph * 0.2, (1 - ph) * 1.3 * fadeEnd); }
+        break; }
+      case 'spark':
+        for (let i = 0; i < 4; i++) { const ph = (lt * 1.6 + i * 0.25) % 1, k = i + Math.floor(lt * 1.6 + i * 0.25) * 5;
+          use(FX_TEX.spark, hp.x + (hash(k) - 0.5) * 0.9, hp.y + (hash(k + 3) - 0.3) * 0.8, hp.z + 0.3, Math.sin(ph * Math.PI) * 0.26, fadeEnd); }
+        break;
+      case 'bang': { const k = clamp(lt / 0.18, 0, 1); use(FX_TEX.bang, hp.x + 0.35, hp.y + 0.6, hp.z, 0.45 * (k < 1 ? k * 1.2 : 1), fadeEnd); break; }
+      case 'anger': use(FX_TEX.anger, hp.x + 0.35, hp.y + 0.45, hp.z + 0.1, 0.24 + Math.abs(Math.sin(lt * 9)) * 0.06, fadeEnd); break;
+      case 'sweat': { const ph = (lt % 1.2) / 1.2; use(FX_TEX.sweat, hp.x - 0.38, hp.y + 0.25 - ph * 0.3, hp.z + 0.2, 0.17, (1 - ph) * 1.5 * fadeEnd); break; }
+      case 'zap': for (let i = 0; i < 3; i++) { const k = Math.floor(lt * 12) + i * 7; use(FX_TEX.zap, hp.x + (hash(k) - 0.5) * 0.5, hp.y + (hash(k + 1) - 0.5) * 0.4, hp.z + (hash(k + 2) - 0.5) * 0.2, 0.3 + hash(k + 4) * 0.15, fadeEnd); } break;
+      case 'haha': for (let i = 0; i < 2; i++) { const age = lt - i * 0.45; if (age < 0) continue; const ph = (age % 0.9) / 0.9; use(FX_TEX.haha, hp.x + (i ? 0.35 : -0.3), hp.y + 0.45 + ph * 0.4, hp.z, 0.3, (1 - ph) * 1.5 * fadeEnd); } break;
+      case 'bzz': use(FX_TEX.bzz, hp.x + Math.sin(lt * 60) * 0.03, hp.y + Math.abs(Math.sin(lt * 5)) * 0.1, hp.z, 0.35, fadeEnd); break;
+      case 'bubble': { const r = W.rigs[f.who]; if (r.bubble) { r.bubble.visible = true; const k = lt / f.d; r.bubble.scale.setScalar(0.08 + 0.92 * k * k); } break; }
+    }
+  }
+}
+
+// Kamera
+function lookPoint(v, out) {
+  if (Array.isArray(v) && typeof v[0] === 'number') return out.set(v[0], v[1], v[2]);
+  const ids = [].concat(v).filter(id => W.rigs[id] && W.rigs[id].root.visible);
+  out.set(0, 0, 0); if (!ids.length) return out.set(0, 1.5, 0);
+  for (const id of ids) out.add(headPos(id, W.tmp));
+  out.multiplyScalar(1 / ids.length); out.y -= 0.05; return out;
+}
+function camShot(T) {
+  const c = lastBefore(EP.cams, T); if (!c) return null;
+  const i = EP.cams.indexOf(c), next = EP.cams[i + 1];
+  const sc = EP.scenes[c.sc]; const endT = next && next.sc === c.sc ? next.t : sc.end;
+  const k = c.to ? easeIO(clamp((T - c.t) / Math.max(0.1, endT - c.t), 0, 1)) : 0;
+  return { c, k };
+}
+function evalCamPos(T, cam) {
+  const s = camShot(T); if (!s) return;
+  const { c, k } = s;
+  const p = c.pos, q = c.to && c.to.pos ? c.to.pos : p;
+  cam.position.set(lerp(p[0], q[0], k), lerp(p[1], q[1], k), lerp(p[2], q[2], k));
+  cam.position.x += Math.sin(T * 0.7) * 0.025; cam.position.y += Math.sin(T * 0.93) * 0.018;
+  const fov = lerp(c.fov || 40, (c.to && c.to.fov) || c.fov || 40, k);
+  if (cam.fov !== fov) { cam.fov = fov; cam.updateProjectionMatrix(); }
+}
+function evalCamLook(T, cam) {
+  const s = camShot(T); if (!s) return;
+  const { c, k } = s;
+  const a = lookPoint(c.look, new THREE.Vector3());
+  if (c.to && c.to.look) a.lerp(lookPoint(c.to.look, new THREE.Vector3()), k);
+  cam.lookAt(a);
+}
+// ===== Ljud: syntad musik och effekter =====
+const AUD = { ctx: null, on: true, master: null, nextNote: 0, step: 0, mood: null };
+function audio() {
+  if (!AUD.ctx) { try { AUD.ctx = new (window.AudioContext || window.webkitAudioContext)(); AUD.master = AUD.ctx.createGain(); AUD.master.gain.value = 0.5; AUD.master.connect(AUD.ctx.destination); } catch (e) { AUD.ctx = null; } }
+  if (AUD.ctx && AUD.ctx.state === 'suspended') AUD.ctx.resume();
+  return AUD.ctx;
+}
+const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+function tone(n, t0, dur, o = {}) {
+  const a = AUD.ctx; if (!a) return;
+  const osc = a.createOscillator(), g = a.createGain();
+  osc.type = o.type || 'triangle'; osc.frequency.setValueAtTime(o.f || hz(n), t0);
+  if (o.glide) osc.frequency.exponentialRampToValueAtTime(o.glide, t0 + dur);
+  const v = o.vol || 0.2;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(v, t0 + (o.att || 0.01)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let node = osc;
+  if (o.lp) { const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; osc.connect(f); node = f; }
+  node.connect(g); g.connect(AUD.master); osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
+function noise(t0, dur, vol = 0.15, hp = 2000) {
+  const a = AUD.ctx; if (!a) return;
+  const b = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = b; f.type = 'highpass'; f.frequency.value = hp; g.gain.value = vol; s.connect(f); f.connect(g); g.connect(AUD.master); s.start(t0);
+}
+const SFX = {
+  jingle(t) { [72, 76, 79, 84, 83, 84].forEach((n, i) => tone(n, t + i * 0.11, 0.25, { type: 'square', vol: 0.07, lp: 2600 })); tone(60, t + 0.66, 0.9, { vol: 0.14 }); tone(64, t + 0.66, 0.9, { vol: 0.1 }); tone(67, t + 0.66, 0.9, { vol: 0.1 }); },
+  sting(t) { [[50, 0, 0.2], [50, 0.26, 0.2], [46, 0.52, 1.4]].forEach(([n, dt, d]) => { tone(n, t + dt, d, { type: 'sawtooth', vol: 0.16, lp: 900 }); tone(n - 12, t + dt, d, { type: 'sawtooth', vol: 0.12, lp: 500 }); }); },
+  swoon(t) { tone(0, t, 1.4, { f: 300, glide: 900, type: 'sine', vol: 0.12, att: 0.3 }); [88, 91, 96].forEach((n, i) => tone(n, t + 0.5 + i * 0.12, 0.6, { type: 'sine', vol: 0.06 })); },
+  ding(t) { tone(93, t, 0.5, { type: 'sine', vol: 0.09 }); tone(100, t + 0.07, 0.5, { type: 'sine', vol: 0.06 }); },
+  pop(t) { tone(0, t, 0.09, { f: 900, glide: 200, type: 'sine', vol: 0.2 }); },
+  bell(t) { [76, 72, 74, 67].forEach((n, i) => { tone(n, t + i * 0.42, 1.2, { type: 'sine', vol: 0.16 }); tone(n + 12, t + i * 0.42, 0.6, { type: 'sine', vol: 0.04 }); }); },
+  tick(t) { noise(t, 0.03, 0.25, 3500); },
+  click(t) { noise(t, 0.05, 0.3, 1500); },
+  aww(t) { [64, 67, 71, 76].forEach((n, i) => tone(n, t + i * 0.08, 1.0, { type: 'sine', vol: 0.07 })); },
+  squeak(t) { tone(0, t, 0.12, { f: 1800, glide: 2600, type: 'sine', vol: 0.08 }); tone(0, t + 0.16, 0.12, { f: 2000, glide: 2900, type: 'sine', vol: 0.07 }); },
+  buzz(t) { for (let i = 0; i < 3; i++) tone(0, t + i * 0.5, 0.3, { f: 120, type: 'square', vol: 0.06, lp: 400 }); },
+};
+function playSfx(name) { if (!AUD.on || !audio() || !SFX[name]) return; SFX[name](AUD.ctx.currentTime + 0.02); }
+const MOODS = {
+  bouncy: { bpm: 118, bass: [48, 0, 55, 0, 50, 0, 57, 55, 53, 0, 60, 0, 55, 0, 52, 50], lead: [72, 0, 0, 76, 0, 79, 0, 0, 77, 0, 76, 0, 74, 0, 0, 0], vol: 1 },
+  boring: { bpm: 62, bass: [45, 0, 0, 0, 44, 0, 0, 0, 43, 0, 0, 0, 44, 0, 0, 0], lead: [], vol: 0.8 },
+  night:  { bpm: 70, bass: [45, 0, 0, 0, 41, 0, 0, 0, 43, 0, 0, 0, 40, 0, 0, 0], lead: [76, 0, 72, 0, 74, 0, 0, 0, 72, 0, 69, 0, 71, 0, 0, 0], vol: 0.7 },
+};
+function scheduleMusic(mood, slow) {
+  if (!AUD.on || !AUD.ctx || !mood) return;
+  const m = MOODS[mood], a = AUD.ctx, spb = 60 / m.bpm / 2 * (slow ? 1.6 : 1);
+  if (AUD.mood !== mood || AUD.nextNote < a.currentTime - 0.2) { AUD.mood = mood; AUD.nextNote = a.currentTime + 0.05; }
+  while (AUD.nextNote < a.currentTime + 0.25) {
+    const i = AUD.step % 16, t = AUD.nextNote;
+    if (m.bass[i]) tone(m.bass[i] - (mood === 'bouncy' ? 0 : 0), t, spb * 1.6, { type: mood === 'bouncy' ? 'triangle' : 'sine', vol: 0.09 * m.vol, lp: 900 });
+    if (m.lead[i]) tone(m.lead[i], t, spb * 1.8, { type: mood === 'night' ? 'sine' : 'square', vol: 0.025 * m.vol, lp: 2200 });
+    if (mood === 'bouncy' && i % 4 === 2) noise(t, 0.04, 0.05, 6000);
+    AUD.nextNote += spb; AUD.step++;
+  }
+}
+
+// ===== Röster (webbläsarens talsyntes) =====
+const VOICE = { on: false, sv: null };
+function pickVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices();
+  VOICE.sv = vs.find(v => /^sv(-|_|$)/i.test(v.lang)) || null;
+  const b = document.getElementById('btnVoice');
+  b.disabled = !VOICE.sv; b.title = VOICE.sv ? 'Läs repliker högt med ' + VOICE.sv.name : 'Din webbläsare har ingen svensk röst';
+}
+function speak(line) {
+  if (!VOICE.on || !VOICE.sv || line.dir) return;
+  try {
+    const u = new SpeechSynthesisUtterance(line.text.replace(/[“”"]/g, ''));
+    const id = line.who[0], d = CAST[id] || {};
+    u.voice = VOICE.sv; u.lang = VOICE.sv.lang; u.pitch = d.pitch || 1; u.rate = (d.rate || 1) * 1.08; u.volume = 1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) { /* talsyntes saknas */ }
+}
+
+// ===== Spelaren =====
+const UI = {};
+let renderer, scene3, camera, hemi, sun, curScene = -1, PT = 0, playing = false, lastNow = 0, dirty = true;
+
+function setLights(name, sc) {
+  const L = LIGHTS[name];
+  scene3.background = new THREE.Color(L.bg); scene3.fog = new THREE.Fog(L.bg, 30, 70);
+  hemi.color.set(L.sky); hemi.groundColor.set(L.gr); hemi.intensity = L.hemi;
+  sun.color.set(L.sun); sun.intensity = L.si;
+  const o = sc.off; sun.position.set(o[0] + L.dir[0], L.dir[1], o[1] + L.dir[2]); sun.target.position.set(o[0], 0, o[1]); sun.target.updateMatrixWorld();
+  if (SETCTX.windows) for (const w of SETCTX.windows) w.material.color.set(name === 'noon' ? '#d7f0ff' : '#bfe6ff');
+}
+
+function setOv(el, on) { if (el._on !== on) { el._on = on; el.classList.toggle('on', on); } }
+function evaluate(PT) {
+  const sc = EP.sceneAt(PT);
+  if (sc.idx !== curScene) {
+    curScene = sc.idx;
+    for (const k in SETS) SETS[k].visible = k === sc.set;
+    setLights(sc.light, sc);
+    UI.loc.querySelector('b').textContent = sc.title; UI.loc.querySelector('span').textContent = sc.sub;
+    UI.chapterBtns.forEach((b, i) => b.classList.toggle('now', i === sc.idx));
+  }
+  evalChars(PT, sc);
+  evalCamPos(PT, camera);
+  applyChars(PT, camera.position);
+  const fl = applyFlags(PT);
+  evalProps(PT, scene3);
+  evalFx(PT);
+  evalCamLook(PT, camera);
+  // overlays
+  const ovOn = name => EP.ovs.some(o => o.name === name && PT >= o.t && PT < o.t + o.d);
+  setOv(UI.title, ovOn('title')); setOv(UI.loc, ovOn('loc')); setOv(UI.drop, ovOn('drop')); setOv(UI.phone, ovOn('phone')); setOv(UI.end, ovOn('end'));
+  setOv(UI.vig, fl.slowmo > 0.5);
+  let line = null;
+  for (const l of EP.lines) { if (l.dir) continue; if (l.t > PT) break; if (PT < l.t + l.d + 0.15) line = l; }
+  if (line !== UI.curLine) {
+    UI.curLine = line;
+    if (line) { const w = UI.sub.querySelector('.who'); w.textContent = line.name; w.style.color = (CAST[line.who[0]] && CAST[line.who[0]].col) || '#f6c453'; UI.sub.querySelector('.txt').textContent = line.text; }
+    setOv(UI.sub, !!line);
+  }
+  return { sc, fl };
+}
+
+function fmt(s) { s = Math.max(0, s); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); }
+function syncUI() {
+  UI.scrub.value = PT; UI.time.textContent = fmt(PT) + ' / ' + fmt(EP.duration);
+  UI.icoPlay.innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M6 4l15 8-15 8z"/>';
+  UI.btnPlay.setAttribute('aria-label', playing ? 'Pausa' : 'Spela');
+  UI.big.hidden = playing || (PT > 0.05 && PT < EP.duration - 0.05);
+}
+function play() {
+  if (PT >= EP.duration - 0.05) PT = 0;
+  playing = true; lastNow = performance.now(); audio(); syncUI();
+}
+function pause() { playing = false; try { speechSynthesis.cancel(); } catch (e) {} syncUI(); dirty = true; }
+function seek(t) { PT = clamp(t, 0, EP.duration); try { speechSynthesis.cancel(); } catch (e) {} AUD.mood = null; dirty = true; syncUI(); }
+
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (playing) {
+    const dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+    const prev = PT; PT = Math.min(EP.duration, PT + dt);
+    for (const e of EP.sfx) if (e.t > prev && e.t <= PT) playSfx(e.name);
+    for (const l of EP.lines) if (l.t > prev && l.t <= PT) speak(l);
+    if (PT >= EP.duration) { playing = false; syncUI(); }
+    dirty = true;
+    if (Math.floor(now / 250) !== UI.lastTick) { UI.lastTick = Math.floor(now / 250); UI.scrub.value = PT; UI.time.textContent = fmt(PT) + ' / ' + fmt(EP.duration); }
+  }
+  if (!dirty) return;
+  dirty = false;
+  const { sc, fl } = evaluate(PT);
+  if (playing) scheduleMusic(sc.music, fl.slowmo > 0.5);
+  renderer.render(scene3, camera);
+}
+
+function resize() {
+  const w = UI.stage.clientWidth, h = UI.stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  UI.stage.style.setProperty('--u', (w / 100) + 'px'); dirty = true;
+}
+
+function buildPage() {
+  const ch = document.getElementById('chapters'); UI.chapterBtns = [];
+  EP.scenes.forEach((sc, i) => {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button'; b.innerHTML = `<span class="tc">${fmt(sc.start)}</span><span><b></b><small></small></span>`;
+    b.querySelector('b').textContent = `${i + 1}. ${sc.title} · ${sc.sub.replace('Måndag ', '')}`; b.querySelector('small').textContent = sc.blurb;
+    b.addEventListener('click', () => { seek(sc.start + 0.01); if (!playing) dirty = true; });
+    li.appendChild(b); ch.appendChild(li); UI.chapterBtns.push(b);
+    const tick = document.createElement('i'); tick.style.left = `calc(${(sc.start / EP.duration) * 100}% - 1px)`; if (i) UI.ticks.appendChild(tick);
+  });
+  const cast = document.getElementById('cast');
+  for (const id of ['stella', 'lola', 'mackenzie', 'carter', 'gunilla']) {
+    const d = CAST[id], el = document.createElement('div'); el.className = 'member';
+    el.innerHTML = `<span class="dot" style="background:${d.col}"></span><div><b></b><p></p></div>`;
+    el.querySelector('b').textContent = d.name; el.querySelector('p').textContent = d.bio; cast.appendChild(el);
+  }
+  const man = document.getElementById('manus');
+  EP.scenes.forEach((sc, i) => {
+    const h = document.createElement('div'); h.className = 'sc'; h.textContent = `Scen ${i + 1} · ${sc.title} · ${sc.sub}`; man.appendChild(h);
+    for (const l of EP.lines.filter(l => l.sc === i && !l.dir)) {
+      const p = document.createElement('p'); p.innerHTML = `<span class="t"></span><b></b> `;
+      p.querySelector('.t').textContent = fmt(l.t); const b = p.querySelector('b'); b.textContent = l.name.toUpperCase() + ':'; b.style.color = (CAST[l.who[0]] && CAST[l.who[0]].col) || '#f6c453';
+      p.appendChild(document.createTextNode(l.text)); man.appendChild(p);
+    }
+  });
+}
+
+async function init() {
+  Object.assign(UI, { stage: document.getElementById('stage'), title: document.getElementById('ovTitle'), loc: document.getElementById('ovLoc'), drop: document.getElementById('ovDrop'), phone: document.getElementById('ovPhone'), end: document.getElementById('ovEnd'), vig: document.getElementById('ovVig'), sub: document.getElementById('ovSub'), scrub: document.getElementById('scrub'), time: document.getElementById('time'), btnPlay: document.getElementById('btnPlay'), icoPlay: document.getElementById('icoPlay'), big: document.getElementById('bigPlay'), ticks: document.getElementById('ticks') });
+  try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]); await Promise.race([Promise.all(['400 40px Shrikhand', '600 40px Fredoka', '700 40px Fredoka', '700 40px Caveat'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+  const canvas = document.getElementById('gl');
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+  catch (e) { document.getElementById('loading').textContent = 'Din webbläsare kan inte visa 3D (WebGL saknas).'; return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  scene3 = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 200);
+  hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.8); scene3.add(hemi);
+  sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.castShadow = true; sun.shadow.mapSize.set(1536, 1536);
+  Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 60 }); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.02;
+  scene3.add(sun); scene3.add(sun.target);
+  buildFxTextures();
+  const builders = { yard: buildYard, corridor: buildCorridor, classroom: buildClassroom, room: buildRoom };
+  for (const k in builders) { const g = builders[k](); g.position.set(SETOFF[k][0], 0, SETOFF[k][1]); SETS[k] = g; scene3.add(g); }
+  for (const id in CAST) { W.rigs[id] = buildChar(id); scene3.add(W.rigs[id].root); }
+  buildProps(scene3); makeFxPool(scene3);
+  UI.scrub.max = EP.duration;
+  buildPage();
+  document.getElementById('loading').remove();
+  UI.big.hidden = false;
+  const hot = window.claude && window.claude.hot;
+  if (hot && hot.snapshot) hot.snapshot(() => ({ PT }));
+  const start = data => { if (data && typeof data.PT === 'number') PT = clamp(data.PT, 0, EP.duration); resize(); syncUI(); requestAnimationFrame(frame); };
+  if (hot && hot.ready) hot.ready(start); else start(hot && hot.data);
+  window.addEventListener('resize', resize);
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(UI.stage);
+  const toggle = () => playing ? pause() : play();
+  UI.btnPlay.addEventListener('click', toggle); UI.big.addEventListener('click', toggle);
+  canvas.addEventListener('click', toggle);
+  UI.scrub.addEventListener('input', () => seek(parseFloat(UI.scrub.value)));
+  const bs = document.getElementById('btnSound');
+  bs.addEventListener('click', () => { AUD.on = !AUD.on; bs.setAttribute('aria-pressed', AUD.on); if (AUD.master) AUD.master.gain.value = AUD.on ? 0.5 : 0; });
+  const bv = document.getElementById('btnVoice');
+  bv.addEventListener('click', () => { VOICE.on = !VOICE.on; bv.setAttribute('aria-pressed', VOICE.on); if (!VOICE.on) try { speechSynthesis.cancel(); } catch (e) {} });
+  if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } else bv.disabled = true;
+  document.getElementById('btnFull').addEventListener('click', () => {
+    const el = UI.stage.parentElement;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, button') && e.key !== ' ') return;
+    if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); toggle(); }
+    else if (e.key === 'ArrowRight') seek(PT + 5); else if (e.key === 'ArrowLeft') seek(PT - 5);
+  });
+}
+init();
+</script>
+</body>
+</html>
