@@ -1,57 +1,600 @@
 {
   "image": "lil-boy-sheet-1x.png",
-  "frameWidth": 16,
-  "frameHeight": 16,
+  "image4x": "lil-boy-sheet.png",
+  "frameWidth": 24,
+  "frameHeight": 24,
   "animations": [
     {
       "name": "idle",
+      "category": "Basics",
       "row": 0,
-      "frames": 4
+      "frames": 4,
+      "fps": 4,
+      "loop": true
     },
     {
       "name": "blink",
+      "category": "Basics",
       "row": 1,
-      "frames": 4
+      "frames": 4,
+      "fps": 6,
+      "loop": true
     },
     {
       "name": "look around",
+      "category": "Basics",
       "row": 2,
-      "frames": 4
+      "frames": 4,
+      "fps": 4,
+      "loop": true
     },
     {
-      "name": "walk right",
+      "name": "sit",
+      "category": "Basics",
       "row": 3,
-      "frames": 4
+      "frames": 4,
+      "fps": 3,
+      "loop": true
     },
     {
-      "name": "walk left",
+      "name": "stretch",
+      "category": "Basics",
       "row": 4,
-      "frames": 4
+      "frames": 6,
+      "fps": 6,
+      "loop": false
     },
     {
-      "name": "jump",
+      "name": "yawn",
+      "category": "Basics",
       "row": 5,
-      "frames": 6
-    },
-    {
-      "name": "wave",
-      "row": 6,
-      "frames": 4
-    },
-    {
-      "name": "cheer",
-      "row": 7,
-      "frames": 4
-    },
-    {
-      "name": "love",
-      "row": 8,
-      "frames": 4
+      "frames": 6,
+      "fps": 5,
+      "loop": false
     },
     {
       "name": "sleep",
+      "category": "Basics",
+      "row": 6,
+      "frames": 4,
+      "fps": 3,
+      "loop": true
+    },
+    {
+      "name": "wake up",
+      "category": "Basics",
+      "row": 7,
+      "frames": 6,
+      "fps": 5,
+      "loop": false
+    },
+    {
+      "name": "walk right",
+      "category": "Moving around",
+      "row": 8,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "walk left",
+      "category": "Moving around",
       "row": 9,
-      "frames": 4
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "run right",
+      "category": "Moving around",
+      "row": 10,
+      "frames": 4,
+      "fps": 12,
+      "loop": true
+    },
+    {
+      "name": "run left",
+      "category": "Moving around",
+      "row": 11,
+      "frames": 4,
+      "fps": 12,
+      "loop": true
+    },
+    {
+      "name": "jump",
+      "category": "Moving around",
+      "row": 12,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    {
+      "name": "climb right wall",
+      "category": "Moving around",
+      "row": 13,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "climb left wall",
+      "category": "Moving around",
+      "row": 14,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "ceiling crawl right",
+      "category": "Moving around",
+      "row": 15,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "ceiling crawl left",
+      "category": "Moving around",
+      "row": 16,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "dragged",
+      "category": "Moving around",
+      "row": 17,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "fall",
+      "category": "Moving around",
+      "row": 18,
+      "frames": 4,
+      "fps": 10,
+      "loop": true
+    },
+    {
+      "name": "land",
+      "category": "Moving around",
+      "row": 19,
+      "frames": 4,
+      "fps": 10,
+      "loop": false
+    },
+    {
+      "name": "sit on edge",
+      "category": "Moving around",
+      "row": 20,
+      "frames": 4,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "peek",
+      "category": "Moving around",
+      "row": 21,
+      "frames": 6,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "pop up",
+      "category": "Moving around",
+      "row": 22,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    {
+      "name": "duck down",
+      "category": "Moving around",
+      "row": 23,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    {
+      "name": "spawn",
+      "category": "Moving around",
+      "row": 24,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    {
+      "name": "despawn",
+      "category": "Moving around",
+      "row": 25,
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    {
+      "name": "typing",
+      "category": "Coding",
+      "row": 26,
+      "frames": 4,
+      "fps": 10,
+      "loop": true
+    },
+    {
+      "name": "writing code",
+      "category": "Coding",
+      "row": 27,
+      "frames": 8,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "terminal",
+      "category": "Coding",
+      "row": 28,
+      "frames": 8,
+      "fps": 5,
+      "loop": true
+    },
+    {
+      "name": "thinking",
+      "category": "Coding",
+      "row": 29,
+      "frames": 8,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "reading",
+      "category": "Coding",
+      "row": 30,
+      "frames": 6,
+      "fps": 3,
+      "loop": true
+    },
+    {
+      "name": "searching",
+      "category": "Coding",
+      "row": 31,
+      "frames": 8,
+      "fps": 5,
+      "loop": true
+    },
+    {
+      "name": "web search",
+      "category": "Coding",
+      "row": 32,
+      "frames": 8,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "loading",
+      "category": "Coding",
+      "row": 33,
+      "frames": 8,
+      "fps": 10,
+      "loop": true
+    },
+    {
+      "name": "progress",
+      "category": "Coding",
+      "row": 34,
+      "frames": 8,
+      "fps": 5,
+      "loop": false
+    },
+    {
+      "name": "todo list",
+      "category": "Coding",
+      "row": 35,
+      "frames": 6,
+      "fps": 4,
+      "loop": false
+    },
+    {
+      "name": "tests passing",
+      "category": "Coding",
+      "row": 36,
+      "frames": 8,
+      "fps": 5,
+      "loop": false
+    },
+    {
+      "name": "tests failing",
+      "category": "Coding",
+      "row": 37,
+      "frames": 8,
+      "fps": 5,
+      "loop": false
+    },
+    {
+      "name": "bug found",
+      "category": "Coding",
+      "row": 38,
+      "frames": 8,
+      "fps": 6,
+      "loop": false
+    },
+    {
+      "name": "squash bug",
+      "category": "Coding",
+      "row": 39,
+      "frames": 8,
+      "fps": 8,
+      "loop": false
+    },
+    {
+      "name": "rubber duck",
+      "category": "Coding",
+      "row": 40,
+      "frames": 8,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "git commit",
+      "category": "Coding",
+      "row": 41,
+      "frames": 6,
+      "fps": 6,
+      "loop": false
+    },
+    {
+      "name": "git push",
+      "category": "Coding",
+      "row": 42,
+      "frames": 6,
+      "fps": 8,
+      "loop": false
+    },
+    {
+      "name": "git pull",
+      "category": "Coding",
+      "row": 43,
+      "frames": 6,
+      "fps": 8,
+      "loop": false
+    },
+    {
+      "name": "deploy",
+      "category": "Coding",
+      "row": 44,
+      "frames": 8,
+      "fps": 8,
+      "loop": false
+    },
+    {
+      "name": "ask permission",
+      "category": "Coding",
+      "row": 45,
+      "frames": 4,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "waiting",
+      "category": "Coding",
+      "row": 46,
+      "frames": 8,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "success",
+      "category": "Reactions",
+      "row": 47,
+      "frames": 6,
+      "fps": 6,
+      "loop": false
+    },
+    {
+      "name": "error",
+      "category": "Reactions",
+      "row": 48,
+      "frames": 6,
+      "fps": 6,
+      "loop": false
+    },
+    {
+      "name": "idea",
+      "category": "Reactions",
+      "row": 49,
+      "frames": 6,
+      "fps": 6,
+      "loop": false
+    },
+    {
+      "name": "confused",
+      "category": "Reactions",
+      "row": 50,
+      "frames": 6,
+      "fps": 5,
+      "loop": true
+    },
+    {
+      "name": "alert",
+      "category": "Reactions",
+      "row": 51,
+      "frames": 4,
+      "fps": 8,
+      "loop": false
+    },
+    {
+      "name": "sparkle",
+      "category": "Reactions",
+      "row": 52,
+      "frames": 4,
+      "fps": 5,
+      "loop": true
+    },
+    {
+      "name": "celebrate",
+      "category": "Reactions",
+      "row": 53,
+      "frames": 8,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "glitch",
+      "category": "Reactions",
+      "row": 54,
+      "frames": 6,
+      "fps": 10,
+      "loop": true
+    },
+    {
+      "name": "overheat",
+      "category": "Reactions",
+      "row": 55,
+      "frames": 6,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "tired",
+      "category": "Reactions",
+      "row": 56,
+      "frames": 6,
+      "fps": 3,
+      "loop": true
+    },
+    {
+      "name": "panic",
+      "category": "Reactions",
+      "row": 57,
+      "frames": 4,
+      "fps": 10,
+      "loop": true
+    },
+    {
+      "name": "wave",
+      "category": "Moods & chatting",
+      "row": 58,
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "cheer",
+      "category": "Moods & chatting",
+      "row": 59,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "love",
+      "category": "Moods & chatting",
+      "row": 60,
+      "frames": 4,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "happy",
+      "category": "Moods & chatting",
+      "row": 61,
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "sad",
+      "category": "Moods & chatting",
+      "row": 62,
+      "frames": 4,
+      "fps": 3,
+      "loop": true
+    },
+    {
+      "name": "angry",
+      "category": "Moods & chatting",
+      "row": 63,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "dizzy",
+      "category": "Moods & chatting",
+      "row": 64,
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "scared",
+      "category": "Moods & chatting",
+      "row": 65,
+      "frames": 4,
+      "fps": 12,
+      "loop": true
+    },
+    {
+      "name": "nod yes",
+      "category": "Moods & chatting",
+      "row": 66,
+      "frames": 4,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "shake no",
+      "category": "Moods & chatting",
+      "row": 67,
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "shrug",
+      "category": "Moods & chatting",
+      "row": 68,
+      "frames": 4,
+      "fps": 5,
+      "loop": false
+    },
+    {
+      "name": "dance",
+      "category": "Moods & chatting",
+      "row": 69,
+      "frames": 8,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "name": "coffee",
+      "category": "Moods & chatting",
+      "row": 70,
+      "frames": 8,
+      "fps": 4,
+      "loop": true
+    },
+    {
+      "name": "eat tokens",
+      "category": "Moods & chatting",
+      "row": 71,
+      "frames": 8,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "talking",
+      "category": "Moods & chatting",
+      "row": 72,
+      "frames": 6,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "name": "listening",
+      "category": "Moods & chatting",
+      "row": 73,
+      "frames": 4,
+      "fps": 4,
+      "loop": true
     }
   ]
 }
